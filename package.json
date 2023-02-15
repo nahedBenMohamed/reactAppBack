@@ -1,0 +1,41 @@
+{
+  "name": "pdss_web_back",
+  "version": "1.0.1",
+  "description": "",
+  "main": "www",
+  "scripts": {
+    "start": " cp src/environment/.local.env .env  && cross-env NODE_ENV=locale  node ./bin/www ",
+    "dev": " nodemon --exec npm start  nodemon --ignore 'src/uploads/*'   ",
+    "lint": "eslint --ext .js,.vue src test/unit",
+    "build:dev": " cp src/environment/.dev.env .env  && cross-env NODE_ENV=development  node ./bin/www ",
+    "build:prod": " cp src/environment/.prod.env .env  && cross-env NODE_ENV=production  node ./bin/www ",
+    "deploy:dev": "pm2 start ecosystem.config.json --only PDSS_API_DEVELOP",
+    "deploy:prod": "pm2 start ecosystem.config.json --only PDSS_API_PRODUCTION"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "express-boom": "^3.0.0",
+    "express-oas-generator": "^1.0.45",
+    "http-api-wrapper": "^1.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^3.0.0",
+    "moment": "^2.29.4",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.3.3",
+    "nodemon": "^2.0.19",
+    "passport": "^0.6.0",
+    "socket.io": "^4.5.1",
+    "swagger-ui-express": "^4.6.0",
+    "validator": "^13.7.0"
+  }
+}

@@ -1,0 +1,569 @@
+{
+      "info": {
+            "title": "PRJ - ELS-PDSS",
+            "version": "1.0.0",
+            "_comment": "[Specification JSON](/api-spec)",
+            "description": "The following API are consumed by PDSS_WEB_FRONT  apps"
+      },
+      "components": {
+            "schemas": {}
+      },
+      "basePath": "/api/v1//",
+      "tags": [
+            {
+                  "name": "Children",
+                  "description": "Everything about Children "
+            },
+            {
+                  "name": "User",
+                  "description": "Everything about User "
+            },
+            {
+                  "name": "Shared",
+                  "description": "Everything about Shared "
+            },
+            {
+                  "name": "Diagnostics",
+                  "description": "Everything about Diagnostics "
+            },
+            {
+                  "name": "Evaluations",
+                  "description": "Everything about Evaluations "
+            }
+      ],
+      "paths": {
+            "child/{id}": {
+                  "post": {
+                        "tags": [
+                              "Children"
+                        ],
+                        "summary": "add children to user ",
+                        "description": "create children for specific user",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "userId",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "77"
+                              },
+                              {
+                                    "in": "body",
+                                    "name": "body",
+                                    "description": "add child info",
+                                    "required": true,
+                                    "schema": {
+                                          "type": "object",
+                                          "properties": {
+                                                "firstName": {
+                                                      "type": "string",
+                                                      "example": "test"
+                                                },
+                                                "lastName": {
+                                                      "type": "string",
+                                                      "example": "test"
+                                                },
+                                                "languages": {
+                                                      "type": "Array",
+                                                      "example": [
+                                                            41
+                                                      ]
+                                                },
+                                                "birthDay": {
+                                                      "type": "string",
+                                                      "format": "date",
+                                                      "example": "2020-07-01"
+                                                },
+                                                "gender": {
+                                                      "type": "string",
+                                                      "enum": [
+                                                            "1",
+                                                            "2",
+                                                            "3"
+                                                      ],
+                                                      "example": "1"
+                                                }
+                                          }
+                                    }
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "child created successfully"
+                              }
+                        }
+                  },
+                  "get": {
+                        "tags": [
+                              "Children"
+                        ],
+                        "summary": "get children by Id",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "childId",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "720"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved children   details successfully"
+                              }
+                        }
+                  },
+                  "patch": {
+                        "tags": [
+                              "Children"
+                        ],
+                        "summary": "update children details ",
+                        "description": "update children details",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "childId",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "729"
+                              },
+                              {
+                                    "in": "body",
+                                    "name": "body",
+                                    "description": "update child info",
+                                    "required": false,
+                                    "schema": {
+                                          "type": "object",
+                                          "properties": {
+                                                "firstName": {
+                                                      "type": "string",
+                                                      "example": "test"
+                                                },
+                                                "lastName": {
+                                                      "type": "string",
+                                                      "example": "test"
+                                                },
+                                                "languages": {
+                                                      "type": "Array",
+                                                      "example": [
+                                                            41
+                                                      ]
+                                                },
+                                                "birthDay": {
+                                                      "type": "string",
+                                                      "format": "date",
+                                                      "example": "2020-07-01"
+                                                },
+                                                "gender": {
+                                                      "type": "string",
+                                                      "enum": [
+                                                            "1",
+                                                            "2",
+                                                            "3"
+                                                      ],
+                                                      "example": "1"
+                                                },
+                                                "other": {
+                                                      "type": "string",
+                                                      "example": "text"
+                                                }
+                                          }
+                                    }
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "child  updated successfully"
+                              }
+                        }
+                  },
+                  "delete": {
+                        "tags": [
+                              "Children"
+                        ],
+                        "summary": "delete children by Id",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "childId",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "720"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "child deleted successfully"
+                              }
+                        }
+                  }
+            },
+            "user/child/{id}": {
+                  "get": {
+                        "tags": [
+                              "User"
+                        ],
+                        "summary": "get children for specific userId",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "id",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "77"
+                              },
+                              {
+                                    "name": "page",
+                                    "in": "query",
+                                    "required": true,
+                                    "example": "1"
+                              },
+                              {
+                                    "name": "items_per_page",
+                                    "in": "query",
+                                    "required": true,
+                                    "example": "5"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved list children for user successfully"
+                              }
+                        }
+                  }
+            },
+            "shared/genders": {
+                  "get": {
+                        "tags": [
+                              "Shared"
+                        ],
+                        "summary": "get list of genders",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved list of genders successfully"
+                              }
+                        }
+                  }
+            },
+            "shared/languages": {
+                  "get": {
+                        "tags": [
+                              "Shared"
+                        ],
+                        "summary": "get list of languages",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved list of languages successfully"
+                              }
+                        }
+                  }
+            },
+            "diagnostics": {
+                  "get": {
+                        "tags": [
+                              "Diagnostics"
+                        ],
+                        "summary": "get list of diagnostics",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved list of diagnostics successfully"
+                              }
+                        }
+                  }
+            },
+            "diagnostics/{id}": {
+                  "get": {
+                        "tags": [
+                              "Diagnostics"
+                        ],
+                        "summary": "get Diagnostics details by Id",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "id",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "1"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved Diagnostic details successfully"
+                              }
+                        }
+                  }
+            },
+            "diagnostics/groups": {
+                  "get": {
+                        "tags": [
+                              "Diagnostics"
+                        ],
+                        "summary": "get Diagnostics details by Id",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "childId",
+                                    "in": "query",
+                                    "type": "string"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved Diagnostic groups successfully"
+                              }
+                        }
+                  }
+            },
+            "diagnostics/sessions/{userId}": {
+                  "get": {
+                        "tags": [
+                              "Diagnostics"
+                        ],
+                        "summary": "get Diagnostics sessions by userId",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "userId",
+                                    "in": "path",
+                                    "required": true,
+                                    "example": "13"
+                              },
+                              {
+                                    "name": "childId",
+                                    "in": "query",
+                                    "type": "string",
+                                    "example": "634"
+                              },
+                              {
+                                    "name": "diagnosisId",
+                                    "in": "query",
+                                    "type": "string",
+                                    "example": "1"
+                              },
+                              {
+                                    "name": "searchFor",
+                                    "in": "query",
+                                    "type": "string",
+                                    "example": "p"
+                              },
+                              {
+                                    "name": "orderBy",
+                                    "in": "query",
+                                    "type": "string",
+                                    "example": "diagnostic_session.date_initialized asc"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved Diagnostic sessions  successfully"
+                              }
+                        }
+                  }
+            },
+            "diagnostics/sessions/{sessionId}": {
+                  "delete": {
+                        "tags": [
+                              "Diagnostics"
+                        ],
+                        "summary": "delete Diagnostics session by sessionId",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "sessionId",
+                                    "in": "path",
+                                    "required": true
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "delete session successfully"
+                              }
+                        }
+                  },
+                  "post": {
+                        "tags": [
+                              "Diagnostics"
+                        ],
+                        "summary": "add Diagnostic result for specific question by sessionId",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "sessionId",
+                                    "in": "path",
+                                    "required": true
+                              },
+                              {
+                                    "in": "body",
+                                    "name": "body",
+                                    "description": "add diagnosis result for specific session and question",
+                                    "required": true,
+                                    "schema": {
+                                          "type": "object",
+                                          "properties": {
+                                                "answer": {
+                                                      "type": "string",
+                                                      "example": "Correct"
+                                                },
+                                                "notes": {
+                                                      "type": "string",
+                                                      "example": "note to add "
+                                                },
+                                                "id": {
+                                                      "type": "string",
+                                                      "example": 7095
+                                                }
+                                          }
+                                    }
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "add  diagnosis result for specific session and test question successfully"
+                              }
+                        }
+                  }
+            },
+            "evaluation": {
+                  "get": {
+                        "tags": [
+                              "Evaluations"
+                        ],
+                        "summary": "get list of analyses",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "childId",
+                                    "in": "query",
+                                    "type": "string"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "retrieved list of analyses successfully"
+                              }
+                        }
+                  }
+            },
+            "records": {
+                  "post": {
+                        "tags": [
+                              "Records"
+                        ],
+                        "summary": "Add record for specific session",
+                        "consumes": [
+                              "multipart/form-data"
+                        ],
+                        "parameters": [
+                              {
+                                    
+                                    "name": "record",
+                                    "description": "add record for specific session ",
+                                    "required": true,
+                            
+                                    "schema": {
+                                          "type": "object",
+                                          "properties": {
+                                                "session": {
+                                                      "type": "string",
+                                                      "example": "0df2cf01deba56171d2d94612b4793397475c5f2"
+                                                },
+                                                "diagnostic_content": {
+                                                      "type": "integer",
+                                                      "example": 2318
+                                                },
+                                                "duration_in_seconds": {
+                                                      "type": "integer",
+                                                      "example": 7095
+                                                },
+                                               "record": {
+                                                      "type": "string",
+                                                      "format": "binary"
+                                                }
+                                          }
+                                    }
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "Record added successfully"
+                              }
+                        }
+                  }},
+            "records/{id}":{      
+                  "delete": {
+                        "tags": [
+                              "Records"
+                        ],
+                        "summary": "delete record by id",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "id",
+                                    "in": "path",
+                                    "required": true
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "Record deleted successfully"
+                              }
+                        }
+                  },
+                  "get": {
+                        "tags": [
+                              "Records"
+                        ],
+                        "summary": "get list of records by session id",
+                        "consumes": [
+                              "application/json"
+                        ],
+                        "parameters": [
+                              {
+                                    "name": "id",
+                                    "in":"path",
+                                    "type": "string"
+                              }
+                        ],
+                        "responses": {
+                              "200": {
+                                    "description": "Retrieved records successfully"
+                              }
+                        }
+                  }
+            }
+      },
+      "swagger": "2.0"
+}

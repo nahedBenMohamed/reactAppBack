@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+# yarn error logs
+yarn-error.log
+# Environment varibales
+.env*
+
+.history
+uploads/*
+
+.vscodeignore
+.vscode
+yarn.lock
+test_folder
+.idea
+package-lock.json
+config/index.js

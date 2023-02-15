@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+require('colors');
+require('../src/providers/socket.js');
+require('../src/providers/db.js');
+const passport = require('passport');
+
+/**
+ * Module dependencies.
+ */
+
+var express = require('../src').express;
+var app = require('../src').app;
+var http = require('../src').http;
+var debug = require('debug')('PDSS:server');
+var boom = require('express-boom');
+var config = require('../config');
+
+//Passport middleware
+app.use(passport.initialize());
+//Passport config
+
+// Use Routes
+app.use('/api/v1', require('../src/routes'));
+
+app.use('/uploads', express.static('uploads'));
+app.use(boom());
+var port = normalizePort(config.env_variables.PORT);
+app.set('port', port);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+http.listen(port, () => {
+	console.clear();
+	console.log('+++++++++++++++ Server is up  +++++++++++++++++++++\n'.bold.green);
+	console.log(`==================================> : ${'localhost'}\n`.bold.red);
+	console.log(`           App running on port ${port}\n`.bold.yellow);
+});
+http.on('error', onError);
+http.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+	var port = parseInt(val, 10);
+
+	if (isNaN(port)) {
+		// named pipe
+		return val;
+	}
+
+	if (port >= 0) {
+		// port number
+		return port;
+	}
+
+	return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+	if (error.syscall !== 'listen') {
+		throw error;
+	}
+
+	var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+
+	// handle specific listen errors with friendly messages
+	switch (error.code) {
+		case 'EACCES':
+			console.error(bind + ' requires elevated privileges');
+			process.exit(1);
+			// eslint-disable-next-line no-unreachable
+			break;
+		case 'EADDRINUSE':
+			console.error(bind + ' is already in use');
+
+			process.exit(1);
+			// eslint-disable-next-line no-unreachable
+			break;
+		default:
+			throw error;
+	}
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+	var addr = http.address();
+	var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+	debug('Listening on ' + bind);
+}

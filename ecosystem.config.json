@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "name": "PDSS_API_DEVELOP",
+      "script": "npm",
+      "automation": false,
+      "args": "run build:dev",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "name": "PDSS_API_PRODUCTION",
+      "script": "npm",
+      "automation": false,
+      "args": "run build:prod",
+      "env_production": {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}
