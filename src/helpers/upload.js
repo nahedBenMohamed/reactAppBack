@@ -10,9 +10,13 @@ const storage = multer.diskStorage({
     filename(req, file, cb) {
         const date = Date.now();
         cb(null, `${req.body.session}-${date}.${file.mimetype.split('/')[1]}`);
-        req.body.filename= `${req.body.session}-${date}.${file.mimetype.split('/')[1]}`
+        req.body.filename = `${req.body.session}-${date}.${file.mimetype.split('/')[1]}`
         req.body.filepath = `uploads/files/${req.body.session}/`
     },
 });
-const upload = multer({ storage });
+const upload = multer({
+    storage, limits: {
+        fileSize: 524288
+    }
+});
 module.exports = { upload };

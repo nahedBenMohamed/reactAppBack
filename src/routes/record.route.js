@@ -5,7 +5,7 @@ const recordRouter = require('express').Router();
 
 recordRouter.post('/',upload.single('record') ,recordController.addRecord)
 recordRouter.delete('/:id',recordController.removeRecord);
-recordRouter.get('/:id',recordController.getRecords)
+recordRouter.get('/:id/:diagnosticId',recordController.getRecords)
 
 
 

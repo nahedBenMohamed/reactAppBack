@@ -1,6 +1,7 @@
 const { connection } = require('../providers');
 const { SQL } = require('../../config');
 const { CryptoProviders } = require('../helpers/properties');
+const { getAnalysesResultScores } = require('./evaluation.service');
 
 module.exports = {
 	getDiagnostics: async function () {
@@ -79,9 +80,11 @@ module.exports = {
 		conn.release();
 		return response[0];
 	},
-	updateDiagnosticSession: async function (id, body) {
+	updateDiagnosticSession: async function (id, body, session) {
 		const conn = await connection.connection();
-		let response = await conn.execute(SQL.diagnosticsQueries.updateSessionToken({ id, body }));
+		let response = await conn.execute(SQL.diagnosticsQueries.updateSessionToken({ id, body, session }));
+		// save last completed session as default
+		if (body.status && body.status == 'finished') this.addDiagnosisResultAnalyses(session);
 		conn.release();
 		return response[0];
 	},
@@ -92,9 +95,18 @@ module.exports = {
 		let questionIds = await conn.execute(
 			SQL.diagnosticsQueries.getDiagnosticExtendsIds(id, session, childAgeInMonths)
 		);
-
+		let hasDiagnosticExtension = false;
+		if (questionIds?.[0]?.[0]?.answer_ids && questionIds?.[0]?.[0]?.answer_ids.length > 0) {
+			hasDiagnosticExtension = true;
+		}
 		let response = await conn.execute(
-			SQL.diagnosticsQueries.getDiagnosisContent(id, session, childAgeInMonths, questionIds?.[0]?.[0]?.answer_ids)
+			SQL.diagnosticsQueries.getDiagnosisContent(
+				id,
+				session,
+				childAgeInMonths,
+				questionIds?.[0]?.[0]?.answer_ids,
+				hasDiagnosticExtension
+			)
 		);
 
 		conn.release();
@@ -124,15 +136,21 @@ module.exports = {
 				);
 			}
 		} else {
-			await conn.execute(SQL.diagnosticsQueries.deleteDiagnosticResult(body.session, content));
-			data = await conn.execute(
-				SQL.diagnosticsQueries.addDiagnosticResultOrNotes(
-					body.session,
-					content,
-					body.result.answer,
-					body.result.notes
-				)
+			let check = await conn.execute(
+				SQL.diagnosticsQueries
+					.DiagnosticResultQueries(body.session, content, body.result)
+					.checkForExistingItem()
 			);
+
+			if (check[0].length > 0) {
+				data = await conn.execute(
+					SQL.diagnosticsQueries.DiagnosticResultQueries(body.session, content, body.result).update()
+				);
+			} else {
+				data = await conn.execute(
+					SQL.diagnosticsQueries.DiagnosticResultQueries(body.session, content, body.result).setNewOne()
+				);
+			}
 		}
 		conn.release();
 		return data[0];
@@ -143,66 +161,32 @@ module.exports = {
 		conn.release();
 		return data[0];
 	},
-	getDiagnosisContentGrammars: async function (body, childAgeInMonths) {
+
+	addDiagnosisResultAnalyses: async function (session) {
 		const conn = await connection.connection();
-		let sql = SQL.diagnosticsQueries.getDiagnosisGrammar(childAgeInMonths);
-		if (body.session) sql = SQL.diagnosticsQueries.getDiagnosisGrammarWitSession(body.session, childAgeInMonths);
-		const data = await conn.execute(sql);
-		if (data?.[0].length > 0) {
-			let items = [];
-			let scores = {
-				total: {},
-				groups: []
-			};
-			let a_score = 0,
-				b_score = 0,
-				group_a_score = 0,
-				group_b_score = 0,
-				group_a_score_total = 0,
-				group_b_score_total = 0;
-			let last_group_name = '';
-			data?.[0].map((item, index) => {
-				let selected = item.selected_answers ? item.selected_answers.split(',').length : 0;
-				if (last_group_name != item.group_name) {
-					if (index > 0)
-						scores.groups.push({
-							name: last_group_name,
-							a: group_a_score,
-							b: group_b_score,
-							a_total: group_a_score_total,
-							b_total: group_b_score_total
-						});
-					group_a_score = 0;
-					group_b_score = 0;
-					group_a_score_total = 0;
-					group_b_score_total = 0;
-					last_group_name = item.group_name;
-				}
-				if (selected >= item.min_occur) item.has_score = true;
-				else item.has_score = false;
-				if (item.belongs_to == 0) group_a_score_total += item.score;
-				else group_b_score_total += item.score;
-				if (item.has_score) {
-					if (item.belongs_to == 0) {
-						group_a_score += item.score;
-						a_score += item.score;
-					} else {
-						group_b_score += item.score;
-						b_score += item.score;
-					}
-				}
-				items.push(item);
+		if (session) {
+			let body = { session: session };
+			const { scores, diagnostic_session } = await getAnalysesResultScores(body);
+			await conn.execute(
+				SQL.diagnosticsQueries.updateDiagnosisResult(diagnostic_session.diagnostic, diagnostic_session.child)
+			);
+			scores.forEach(async score => {
+				let tvalue = score.tvalue ? score.tvalue : 0;
+				let visible = score.visible ? score.visible : 'yes';
+				await conn.execute(
+					SQL.diagnosticsQueries.insertDiagnosisResult(
+						diagnostic_session.diagnostic,
+						session,
+						diagnostic_session.child,
+						score.scoreName,
+						score.type,
+						visible,
+						tvalue,
+						score.values
+					)
+				);
 			});
-			scores.groups.push({
-				name: last_group_name,
-				a: group_a_score,
-				b: group_b_score,
-				a_total: group_a_score_total,
-				b_total: group_b_score_total
-			});
-			scores.total.a = a_score;
-			scores.total.b = b_score;
-			return { scores, items };
 		}
+		conn.release();
 	}
 };

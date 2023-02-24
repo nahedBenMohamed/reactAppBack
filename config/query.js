@@ -89,14 +89,30 @@ module.exports = {
 			 VALUES (${userId},${diagnosticId},${childId},(SELECT TIMESTAMPDIFF(MONTH, child.birthdate, CURDATE()) AS age_in_months 
 			 FROM child 
 			 WHERE child.id=${childId}))`,
-		addDiagnosticResultOrNotes: (session, contentId, answer, notes) => {
-			let sql;
-			if (answer?.length > 0)
-				sql = `INSERT INTO diagnostic_result (session,diagnostic_content,answer) VALUES ('${session}','${contentId}','${answer}')`;
-			else if (notes?.length > 0)
-				sql = `INSERT INTO diagnostic_result (session,diagnostic_content,notes) VALUES ('${session}','${contentId}','${notes}')`;
+		DiagnosticResultQueries: (session, contentId, body) => {
+			let setters = '',
+				answer = '',
+				updatesSettlers = '';
 
-			return sql;
+			Object.keys(body).forEach((x, i) => {
+				setters += `${x}`;
+				answer += `${body[x]}`;
+				updatesSettlers = `${setters}="${answer}"`;
+				if (Object.keys(body).length - 1 > i) {
+					setters += ',';
+					answer += ',';
+					updatesSettlers += ',';
+				}
+			});
+
+			return {
+				checkForExistingItem: () =>
+					`SELECT * FROM diagnostic_result WHERE session="${session}" AND diagnostic_content="${contentId}"`,
+				setNewOne: () =>
+					`INSERT INTO diagnostic_result (session,diagnostic_content,${setters})  VALUES ('${session}','${contentId}','${answer}')`,
+				update: () =>
+					`UPDATE diagnostic_result SET ${updatesSettlers} WHERE session="${session}" AND diagnostic_content="${contentId}"`
+			};
 		},
 
 		getDiagnosticExtendedResultDetails: (session, contentId, diagnosticId) =>
@@ -113,7 +129,7 @@ module.exports = {
 					answer += ',';
 				}
 			});
-			console.log('answers');
+
 			return `INSERT INTO diagnostic_result_detail_0${diagnosticId} (session,diagnostic_content,${setters}) VALUES ('${session}','${contentId}','${answer}')`;
 		},
 		updateExtendedResult: (session, contentId, diagnosticId, body) => {
@@ -127,17 +143,26 @@ module.exports = {
 
 			return `UPDATE diagnostic_result_detail_0${diagnosticId} SET ${setter} WHERE session='${session}' AND diagnostic_content='${contentId}'`;
 		},
-		updateSessionToken: ({ id, body }) => {
-			let setter = '';
+		updateSessionToken: ({ id, body, session }) => {
+			let setter = session
+				? `process_percent=(SELECT COUNT(answer)*100.0 / ( select COUNT(*) from diagnostic_content
+			where diagnostic_content.diagnostic=diagnostic_session.diagnostic  AND 
+			(CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
+			 AND age_min<=diagnostic_session.child_age_in_months    AND age_max>=diagnostic_session.child_age_in_months )
+			FROM diagnostic_result where diagnostic_result.session="${session}"
+			and diagnostic_result.diagnostic_content in (select id from diagnostic_content  where  (CASE WHEN diagnostic_session.started="training" 
+			THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END))), `
+				: '';
 			Object.keys(body).forEach((x, i) => {
 				setter += `${x}="${body[x]}"`;
 				if (Object.keys(body).length - 1 > i) {
 					setter += ',';
 				}
 			});
-			return `UPDATE diagnostic_session SET ${setter} WHERE id=${id};`;
+			console.log(setter);
+			return `UPDATE diagnostic_session SET ${setter} WHERE ${session ? `session="${session}"` : `id="${id}"`};`;
 		},
-		getDiagnosisContent: (id, session, childAgeInMonths, questionIDS) => {
+		getDiagnosisContent: (id, session, childAgeInMonths, questionIDS, hasDiagnosticExtension) => {
 			let extendQueries = '';
 			if (questionIDS?.length > 0) {
 				extendQueries = 'JSON_OBJECT(';
@@ -158,9 +183,15 @@ module.exports = {
 			(SELECT GROUP_CONCAT(diagnostic_extended.answer_id SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic) as answer_ids,
 			(SELECT GROUP_CONCAT(diagnostic_extended.hide_in_test SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic) as hide_in_tests,
 			${extendQueries}
+			${questionIDS},
 			(SELECT GROUP_CONCAT(diagnostic_content_image.file SEPARATOR ',') FROM diagnostic_content_image
 			 WHERE diagnostic_content_image.diagnostic_content = diagnostic_content.id) as image
 			 FROM diagnostic_content
+			 ${
+					hasDiagnosticExtension
+						? `LEFT JOIN (SELECT * FROM diagnostic_result_detail_0${id} WHERE session='${session}') diagnostic_result_detail_0${id}  ON diagnostic_content.id = diagnostic_result_detail_0${id} .diagnostic_content`
+						: ''
+				}
 			 JOIN diagnostic_session ON  diagnostic_session.session="${session}"  
 			 WHERE diagnostic_content.diagnostic=${id}  AND
 			 (CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
@@ -185,7 +216,20 @@ module.exports = {
 		) => `SELECT *,(SELECT GROUP_CONCAT(dga.diagnostic_result_extended_answer) FROM diagnostic_result_grammar_answer dga LEFT JOIN diagnostic_result_extended_answers drea ON dga.diagnostic_result_extended_answer = drea.id WHERE dga.diagnostic_content_grammar = diagnostic_content_grammar.id AND dga.session='${session}' AND drea.id IS NOT NULL) AS selected_answers 
 	FROM diagnostic_content_grammar WHERE diagnostic_content_grammar.age_min<=${childAgeInMonths} AND diagnostic_content_grammar.age_max>=${childAgeInMonths} ORDER BY id ASC`,
 		getDiagnosisGrammar: childAgeInMonths =>
-			`SELECT * FROM diagnostic_content_grammar WHERE diagnostic_content_grammar.age_min<=${childAgeInMonths} AND diagnostic_content_grammar.age_max>=${childAgeInMonths} ORDER BY id ASC`
+			`SELECT * FROM diagnostic_content_grammar WHERE diagnostic_content_grammar.age_min<=${childAgeInMonths} AND diagnostic_content_grammar.age_max>=${childAgeInMonths} ORDER BY id ASC`,
+		updateDiagnosisResult: (diagnostic, child) =>
+			`UPDATE diagnostic_result_analysis SET use_in_profile='no' WHERE diagnostic='${diagnostic}' AND child='${child}'`,
+		insertDiagnosisResult: (
+			diagnostic,
+			session,
+			child,
+			scoreName,
+			type,
+			visible,
+			tvalue,
+			values
+		) => `INSERT INTO diagnostic_result_analysis (diagnostic,session,child,score_name,type,visible,tvalue,data) VALUES (
+			'${diagnostic}','${session}','${child}','${scoreName}','${type}','${visible}','${tvalue}','${JSON.stringify(values)}')`
 	},
 	queriesHelpers: {
 		checkIfExist: (table, id) => `SELECT id FROM ${table} WHERE id = ${id};`
@@ -312,12 +356,27 @@ module.exports = {
 			diagnosticId,
 			session
 		) => `SELECT diagnostic_content_analysis_questions.*, draq.answer FROM diagnostic_content_analysis_questions 
-		LEFT JOIN (SELECT * FROM diagnostic_result_analysis_question WHERE session='${session}') draq ON draq.question_id = diagnostic_content_analysis_questions.id WHERE diagnostic_content_analysis_questions.diagnostic=${diagnosticId}`
+		LEFT JOIN (SELECT * FROM diagnostic_result_analysis_question WHERE session='${session}') draq ON draq.question_id = diagnostic_content_analysis_questions.id WHERE diagnostic_content_analysis_questions.diagnostic=${diagnosticId}`,
+		getDiagnosticResultDetail: (diagnosticId, diagnosticContent, session) =>
+			`SELECT * FROM diagnostic_result_detail_0${diagnosticId} WHERE session='${session}' AND diagnostic_content='${diagnosticContent}'`,
+		editDiagnosticResultDetail: (
+			diagnosticId,
+			diagnosticContent,
+			answer,
+			answerId,
+			session
+		) => `UPDATE diagnostic_result_detail_0${diagnosticId} SET 
+									${answerId}='${answer}'
+									WHERE session='${session}' AND diagnostic_content='${diagnosticContent}'`,
+		setDiagnosticResultDetail: (diagnosticId, diagnosticContent, answer, answerId, session) =>
+			`INSERT INTO diagnostic_result_detail_0${diagnosticId} (session,diagnostic_content,${answerId}) VALUES ('${session}','${diagnosticContent}','${answer}')`,
+		getArticulationType: `SELECT * FROM articulation_type`,
+		getLexiconErrorType: `SELECT * FROM lexicon_error_type`
 	},
 	recordQueries: {
 		createRecord: (session, diagnostic_content, filepath, filename, duration_in_seconds) =>
 			`INSERT INTO diagnostic_result_audio_record (session,diagnostic_content,filepath,filename,duration_in_seconds) VALUES ('${session}','${diagnostic_content}','${filepath}','${filename}',${duration_in_seconds});`,
 		removeRecord: id => `DELETE FROM diagnostic_result_audio_record WHERE id=${id}`,
-		getRecords: sessionId => `SELECT * FROM diagnostic_result_audio_record WHERE session='${sessionId}' `
+		getRecords: (sessionId,diagnostic_content)=> `SELECT * FROM diagnostic_result_audio_record WHERE session='${sessionId}' and diagnostic_content ='${diagnostic_content}' `
 	}
 };

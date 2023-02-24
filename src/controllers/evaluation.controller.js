@@ -25,5 +25,29 @@ module.exports = {
 			data: result,
 			message: 'analyses result score details retrieved  successfully'
 		});
+	}),
+	setDiagnosticResultDetail: APIWrapper(async function (req) {
+		const result = await evaluationService.setDiagnosticResultDetail(req.body);
+		return new HTTPResponseBuilder({
+			status: 'OK',
+			data: result,
+			message: 'diagnostic details updated successfully'
+		});
+	}),
+	getArticulationTypes: APIWrapper(async function (req) {
+		const articulations = await evaluationService.getArticulationTypes();
+		return new HTTPResponseBuilder({
+			status: 'OK',
+			data: articulations,
+			message: 'retrieved articulation types successfully'
+		});
+	}),
+	getLexiconErrorTypes: APIWrapper(async function (req) {
+		const lexicons = await evaluationService.getLexiconErrorTypes();
+		return new HTTPResponseBuilder({
+			status: 'OK',
+			data: lexicons,
+			message: 'retrieved lexicon error types successfully'
+		});
 	})
 };

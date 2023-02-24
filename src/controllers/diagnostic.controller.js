@@ -89,8 +89,7 @@ const createNewSession = APIWrapper(async function (req) {
 });
 
 const updateDiagnosticSession = APIWrapper(async function (req) {
-	const session = await diagnosticService.updateDiagnosticSession(req.params.id, req.body);
-
+	const session = await diagnosticService.updateDiagnosticSession(req.params.id, req.body, req.params.session);
 	if (session)
 		return new HTTPResponseBuilder({
 			status: 'OK',

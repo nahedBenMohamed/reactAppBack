@@ -19,10 +19,10 @@ module.exports = {
         conn.release();    
         return data[0];
     },
-    getRecords: async function (id) {
+    getRecords: async function (id,diagnostic_content) {
 		const conn = await connection.connection();
         let data = await conn
-            .execute(SQL.recordQueries.getRecords(id));
+            .execute(SQL.recordQueries.getRecords(id,diagnostic_content));
         conn.release();    
         return data[0];
     }

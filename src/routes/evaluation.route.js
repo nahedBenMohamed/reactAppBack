@@ -7,6 +7,12 @@ evaluationRouter
 	.get('/', evaluationValidation.validateGetAnalyses, evaluationController.getAnalyses)
 	.patch('/', evaluationController.setAnalysesResult);
 
-evaluationRouter.route('/result').get(evaluationController.getAnalysesResultScores);
+evaluationRouter.route('/result')
+    .get(evaluationController.getAnalysesResultScores)
+	.patch(evaluationController.setDiagnosticResultDetail);
+
+evaluationRouter.get('/articulations', evaluationController.getArticulationTypes);
+evaluationRouter.get('/lexicons', evaluationController.getLexiconErrorTypes);
+
 
 module.exports = evaluationRouter;

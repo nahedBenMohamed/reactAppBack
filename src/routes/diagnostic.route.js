@@ -27,7 +27,7 @@ diagnosticRouter
 		diagnosticController.addDiagnosisResult
 	)
 	.post('/sessions', validateNewSessionInputs, diagnosticController.createNewSession)
-	.patch('/sessions/:id', diagnosticController.updateDiagnosticSession)
+	.patch('/sessions/:id/:session', diagnosticController.updateDiagnosticSession)
 	.get('/sessions/initial/details', diagnosticController.createNewSession)
 	.get('/sessions/content/:diagnosticId', diagnosticController.getDiagnosticContent);
 

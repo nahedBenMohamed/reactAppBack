@@ -27,7 +27,7 @@ const removeRecord = APIWrapper(async function(req){
 })
 
 const getRecords = APIWrapper(async function(req){
-	const result = await recordService.getRecords(req.params.id);
+	const result = await recordService.getRecords(req.params.id,req.params.diagnosticId);
 	return new HTTPResponseBuilder({
 		status: 'OK',
 		data: result,

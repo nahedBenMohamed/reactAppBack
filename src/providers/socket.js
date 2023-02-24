@@ -28,6 +28,13 @@ io.on('connection', function (socket) {
 			docket_id: socket?.handshake?.query
 		});
 	});
+	socket.on('GET_DIAGNOSTIC_STATES', function (data) {
+		console.log('SET_DIAGNOSTIC_ANSWER', JSON.parse(data));
+		io.emit('GET_DIAGNOSTIC_STATES', {
+			data: JSON.parse(data),
+			docket_id: socket?.handshake?.query
+		});
+	});
 
 	socket.on('checked', function (data) {});
 });
