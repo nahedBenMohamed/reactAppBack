@@ -49,7 +49,7 @@ module.exports = {
 	},
 	deleteChild: async function (childId) {
 		const conn = await connection.connection();
-		let data = await conn.promise().execute(SQL.chilQueries.deleteChild(childId));
+		let data = await conn.execute(SQL.chilQueries.deleteChild(childId));
 		conn.release();
 		return data[0];
 	}

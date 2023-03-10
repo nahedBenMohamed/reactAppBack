@@ -9,9 +9,22 @@ require('dotenv').config();
 
 const config = require('../config');
 const { join } = require('path');
+process.on('uncaughtException', (error, origin) => {
+    console.log('----- Uncaught exception -----')
+    console.log(error)
+    console.log('----- Exception origin -----')
+    console.log(origin)
+})
 
+process.on('unhandledRejection', (reason, promise) => {
+    console.log('----- Unhandled Rejection at -----')
+    console.log(promise)
+    console.log('----- Reason -----')
+    console.log(reason)
+})
 app.use(cors());
 app.use(morgan('tiny'));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(

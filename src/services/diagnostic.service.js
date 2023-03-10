@@ -109,6 +109,22 @@ module.exports = {
 			)
 		);
 
+		if (id == 5) {
+			let extraContent = await Promise.all(
+				response[0].map(async content => {
+					let data = await conn.execute(
+						SQL.diagnosticsQueries.getDiagnosisExtendedQuestionContent(session, content?.id)
+					);
+
+					return {
+						...content,
+						extraContent: await data[0]
+					};
+				})
+			);
+
+			response[0] = extraContent;
+		}
 		conn.release();
 		return response[0];
 	},
@@ -171,6 +187,26 @@ module.exports = {
 				SQL.diagnosticsQueries.updateDiagnosisResult(diagnostic_session.diagnostic, diagnostic_session.child)
 			);
 			scores.forEach(async score => {
+				let data = {}
+				switch (score.type) {
+					case 'values':
+                        data = {values: score.values, interpretation: score.interpretation}
+						break;
+					case 'table':
+						data = {head: score.head, values: score.values}
+						break;
+					case 'message':
+						data = {label: score.label, link: score.link}
+						break;
+					//need to be updated after adding score to test 5
+					case 'accordion':
+					case 'compact_values':
+					case 'text':
+					case 'questions':
+					case 'answers':
+					default:
+						data = score.values
+				}
 				let tvalue = score.tvalue ? score.tvalue : 0;
 				let visible = score.visible ? score.visible : 'yes';
 				await conn.execute(
@@ -182,7 +218,7 @@ module.exports = {
 						score.type,
 						visible,
 						tvalue,
-						score.values
+						data
 					)
 				);
 			});

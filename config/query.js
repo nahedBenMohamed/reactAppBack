@@ -13,7 +13,7 @@ module.exports = {
 		addChildLanguage: (child, language) =>
 			`INSERT INTO child_language (child,language) VALUES (${child},${language})`,
 		getChildById: childId =>
-			`SELECT child.id, child.gender, child.firstname  AS firstName, child.lastname AS lastName,child.other, DATE_FORMAT(child.birthdate, '%Y-%m-%d') AS birthdate, child.created, TIMESTAMPDIFF(MONTH, child.birthdate, CURDATE()) AS age_in_months,(SELECT GROUP_CONCAT(child_language.language) FROM child_language WHERE child_language.child = child.id) as languages FROM child WHERE child.id=${childId};`,
+			`SELECT child.id, child.gender, child.firstname AS firstName, user , child.lastname AS lastName,child.other, DATE_FORMAT(child.birthdate, '%Y-%m-%d') AS birthdate, child.created, TIMESTAMPDIFF(MONTH, child.birthdate, CURDATE()) AS age_in_months,(SELECT GROUP_CONCAT(child_language.language) FROM child_language WHERE child_language.child = child.id) as languages FROM child WHERE child.id=${childId};`,
 		deleteChildLanguage: childId => `DELETE FROM child_language WHERE child=${childId}`,
 		getLastID: tableName => `select id from ${tableName} order by id DESC limit 1`
 	},
@@ -30,6 +30,7 @@ module.exports = {
 			`SELECT child.id, child.gender, child.firstname AS firstName, child.lastname AS lastName, DATE_FORMAT(child.birthdate, '%d.%m.%Y') AS birthdate, child.created, (SELECT GROUP_CONCAT(language.name SEPARATOR ', ') FROM child c LEFT JOIN child_language ON child_language.child = c.id LEFT JOIN language ON child_language.language = language.id WHERE child_language.child = child.id) as language_names FROM child WHERE child.user = ${userId} HAVING child.firstname LIKE '%${search_for}%' OR child.lastname LIKE '%${search_for}%' OR birthdate LIKE '%${search_for}%' ORDER BY ${order_by} `
 	},
 	diagnosticsQueries: {
+		getDiagnosticById: id => `SELECT * FROM diagnostic WHERE id=${id}`,
 		getDiagnostics: `select diagnostic.id AS id, 
 		diagnostic.prio AS prio,
 	      diagnostic.age_min  AS ageMin, diagnostic.age_max AS ageMax, 
@@ -162,6 +163,19 @@ module.exports = {
 			console.log(setter);
 			return `UPDATE diagnostic_session SET ${setter} WHERE ${session ? `session="${session}"` : `id="${id}"`};`;
 		},
+		getDiagnosisExtendedQuestionContent: (session, content) => ` 
+				SELECT diagnostic_content_extended.*, diagnostic_result_extended_answers.answer
+				FROM diagnostic_content_extended
+				LEFT JOIN (
+				SELECT *
+				FROM diagnostic_result_extended_answers
+				WHERE session ='${session}'
+				) AS diagnostic_result_extended_answers ON 
+				diagnostic_content_extended.question_id = diagnostic_result_extended_answers.question_id AND diagnostic_content_extended.diagnostic_content = diagnostic_result_extended_answers.diagnostic_content
+				WHERE diagnostic_content_extended.diagnostic_content = ${content}
+				ORDER BY diagnostic_content_extended.id ASC;
+  
+  `,
 		getDiagnosisContent: (id, session, childAgeInMonths, questionIDS, hasDiagnosticExtension) => {
 			let extendQueries = '';
 			if (questionIDS?.length > 0) {
@@ -199,17 +213,33 @@ module.exports = {
 			 AND diagnostic_content.age_max>=${childAgeInMonths}; `;
 			return sql;
 		},
-		getDiagnosticExtendsIds: (id, session, childAgeInMonths) =>
-			`SELECT ( SELECT GROUP_CONCAT(diagnostic_extended.answer_id SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic ) as answer_ids
-		FROM diagnostic_content JOIN diagnostic_session ON  diagnostic_session.session="${session}"   	WHERE diagnostic_content.diagnostic=${id}  AND
-		(CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
-		 AND diagnostic_content.age_min<=${childAgeInMonths} 
-		AND diagnostic_content.age_max>=${childAgeInMonths};`,
+		getDiagnosticExtendsIds: (id, session, childAgeInMonths) => {
+			let sql = `SELECT ( SELECT GROUP_CONCAT(diagnostic_extended.answer_id SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic ) as answer_ids
+				FROM diagnostic_content JOIN diagnostic_session ON  diagnostic_session.session="${session}"   	WHERE diagnostic_content.diagnostic=${id}  AND
+				(CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
+				 AND diagnostic_content.age_min<=${childAgeInMonths} 
+				AND diagnostic_content.age_max>=${childAgeInMonths};`;
+
+			console.log(sql);
+			return sql;
+		},
 
 		getDiagnosisContentById: diagnosisId =>
 			`SELECT diagnostic_content.* FROM diagnostic_content WHERE diagnostic_content.diagnostic=${diagnosisId} AND training='no'`,
+
 		getDiagnosisExtended: diagnosisId =>
 			`SELECT diagnostic_extended.* FROM diagnostic_extended WHERE diagnostic_extended.diagnostic=${diagnosisId}`,
+		getDiagnosisExtendedQuestion: (
+			session,
+			id,
+			answerId1,
+			answerId2,
+			answerId3
+		) => `SELECT diagnostic_extended.question_id,(SELECT SUM(IF(
+			CASE diagnostic_extended.answer_id WHEN '${answerId1}' THEN diagnostic_result_detail_${id}.${answerId1} WHEN '${answerId2}' THEN diagnostic_result_detail_${id}.${answerId2} 
+			WHEN '${answerId3}' THEN diagnostic_result_detail_${id}.${answerId3} END = 'incorrect', 1, 0)) FROM diagnostic_result_detail_${id} 
+			WHERE diagnostic_result_detail_${id}.session='${session}') AS score FROM diagnostic_extended WHERE diagnostic_extended.diagnostic=2 AND 
+			(diagnostic_extended.answer_id='${answerId1}' OR diagnostic_extended.answer_id='${answerId2}' OR diagnostic_extended.answer_id='${answerId3}')`,
 		getDiagnosisGrammarWitSession: (
 			session,
 			childAgeInMonths
@@ -229,7 +259,10 @@ module.exports = {
 			tvalue,
 			values
 		) => `INSERT INTO diagnostic_result_analysis (diagnostic,session,child,score_name,type,visible,tvalue,data) VALUES (
-			'${diagnostic}','${session}','${child}','${scoreName}','${type}','${visible}','${tvalue}','${JSON.stringify(values)}')`
+			'${diagnostic}','${session}','${child}','${scoreName}','${type}','${visible}','${tvalue}','${JSON.stringify(values)}')`,
+		getDiagnosisContentResultDetails: (id, session, answerId) =>
+			`SELECT diagnostic_content.name FROM diagnostic_content LEFT JOIN diagnostic_result_detail_${id} ON  diagnostic_content.id = diagnostic_result_detail_${id}.diagnostic_content 
+			WHERE diagnostic_result_detail_${id}.session='${session}' AND diagnostic_result_detail_${id}.${answerId} = 'incorrect'`
 	},
 	queriesHelpers: {
 		checkIfExist: (table, id) => `SELECT id FROM ${table} WHERE id = ${id};`
@@ -371,12 +404,64 @@ module.exports = {
 		setDiagnosticResultDetail: (diagnosticId, diagnosticContent, answer, answerId, session) =>
 			`INSERT INTO diagnostic_result_detail_0${diagnosticId} (session,diagnostic_content,${answerId}) VALUES ('${session}','${diagnosticContent}','${answer}')`,
 		getArticulationType: `SELECT * FROM articulation_type`,
-		getLexiconErrorType: `SELECT * FROM lexicon_error_type`
+		getLexiconErrorType: `SELECT * FROM lexicon_error_type`,
+		getSegment: 'SELECT * FROM segment',
+		getVowels: "SELECT name FROM diagnostic_tag WHERE diagnostic=2 AND type='Vokal'",
+		getLexiconErrorTypeByTagName: (
+			session,
+			id,
+			answerId,
+			tagName,
+			errorTypeTag
+		) => `SELECT lexicon_error_type.name, (SELECT COUNT(*) FROM diagnostic_result_detail_${id} 
+		LEFT JOIN diagnostic_content_tag ON diagnostic_result_detail_${id}.diagnostic_content = diagnostic_content_tag.diagnostic_content 
+		LEFT JOIN diagnostic_tag ON diagnostic_content_tag.diagnostic_tag = diagnostic_tag.id 
+		WHERE diagnostic_result_detail_${id}.session='${session}' AND 
+		diagnostic_result_detail_${id}.${answerId} = lexicon_error_type.id AND 
+		diagnostic_tag.name='${tagName}') AS count, (SELECT COUNT(*) FROM diagnostic_result_detail_${id} 
+		LEFT JOIN diagnostic_content_tag ON diagnostic_result_detail_${id}.diagnostic_content = diagnostic_content_tag.diagnostic_content 
+		LEFT JOIN diagnostic_tag ON diagnostic_content_tag.diagnostic_tag = diagnostic_tag.id 
+		WHERE diagnostic_result_detail_${id}.session='${session}' AND 
+		diagnostic_result_detail_${id}.${answerId} IS NOT NULL AND 
+		diagnostic_tag.name='${tagName}') AS total FROM lexicon_error_type WHERE lexicon_error_type.show_for LIKE '%${errorTypeTag}%'`,
+		getDiagnosisResultDetails: (session, id, answerId, reponse) =>
+			`SELECT SUM(IF(diagnostic_result_detail_${id}.${answerId} = '${reponse}', 1, 0)) AS count_accentuation FROM diagnostic_result_detail_${id} 	WHERE diagnostic_result_detail_${id}.session='${session}'`,
+		getTargetItemHavingPhonetic: (
+			session,
+			childAgeInMonths
+		) => `SELECT diagnostic_content.target_item_html, diagnostic_content.target_item, drd.answer_04, 
+		(SELECT dt.name FROM diagnostic_content_tag dct LEFT JOIN 
+			(SELECT * FROM diagnostic_tag WHERE diagnostic_tag.type='Betonungsmuster')
+			 dt ON dct.diagnostic_tag = dt.id WHERE dct.diagnostic_content = diagnostic_content.id AND dt.name IS NOT NULL)
+			 AS phonetic_structure 
+		FROM diagnostic_content LEFT JOIN (SELECT * FROM diagnostic_result_detail_02 WHERE diagnostic_result_detail_02.session='${session}') drd 
+		ON diagnostic_content.id = drd.diagnostic_content WHERE diagnostic_content.age_min<=${childAgeInMonths} AND diagnostic_content.age_max>=${childAgeInMonths} AND 
+		diagnostic_content.diagnostic=2 AND diagnostic_content.training='no' 
+		HAVING phonetic_structure IS NOT NULL`,
+		getTargetItem: (session, childAgeInMonths) =>
+			`SELECT diagnostic_content.target_item_html, drd.answer_04 FROM diagnostic_content 
+	LEFT JOIN (SELECT * FROM diagnostic_result_detail_02 WHERE diagnostic_result_detail_02.session='${session}') drd 
+	ON diagnostic_content.id = drd.diagnostic_content WHERE diagnostic_content.age_min<=${childAgeInMonths} AND 
+	diagnostic_content.age_max>=${childAgeInMonths} AND diagnostic_content.diagnostic=2 AND 
+	diagnostic_content.training='no'`,
+		getTargetItemByTag: (session, childAgeInMonths, tagName) =>
+			`SELECT diagnostic_content.target_item_html, diagnostic_content.target_item, drd.answer_04, 
+	(SELECT GROUP_CONCAT(dt.name) FROM diagnostic_content_tag dct LEFT JOIN (SELECT * FROM diagnostic_tag WHERE diagnostic_tag.type='${tagName}') dt ON dct.diagnostic_tag = dt.id WHERE dct.diagnostic_content = diagnostic_content.id AND dt.name IS NOT NULL) AS phonetic_structure 
+	FROM diagnostic_content LEFT JOIN (SELECT * FROM diagnostic_result_detail_02 WHERE diagnostic_result_detail_02.session='${session}') drd 
+	ON diagnostic_content.id = drd.diagnostic_content WHERE diagnostic_content.age_min<=${childAgeInMonths} AND 
+	diagnostic_content.age_max>=${childAgeInMonths} AND diagnostic_content.diagnostic=2 AND diagnostic_content.training='no' HAVING phonetic_structure IS NOT NULL`,
+		getAnswer_04: session =>
+			` SELECT answer_04 FROM diagnostic_result_detail_02 WHERE session='${session}' AND answer_04 IS NOT NULL`,
+		getDiagnosticAnalysis: (childId, diagnosisId) => {
+			let diagnosticIds = diagnosisId != '' && diagnosisId != null ? `AND diagnostic IN (${diagnosisId})` : '';
+			return `SELECT * FROM diagnostic_result_analysis WHERE child=${childId} AND use_in_profile='yes' ${diagnosticIds}`;
+		}
 	},
 	recordQueries: {
 		createRecord: (session, diagnostic_content, filepath, filename, duration_in_seconds) =>
 			`INSERT INTO diagnostic_result_audio_record (session,diagnostic_content,filepath,filename,duration_in_seconds) VALUES ('${session}','${diagnostic_content}','${filepath}','${filename}',${duration_in_seconds});`,
 		removeRecord: id => `DELETE FROM diagnostic_result_audio_record WHERE id=${id}`,
-		getRecords: (sessionId,diagnostic_content)=> `SELECT * FROM diagnostic_result_audio_record WHERE session='${sessionId}' and diagnostic_content ='${diagnostic_content}' `
+		getRecords: (sessionId, diagnostic_content) =>
+			`SELECT * FROM diagnostic_result_audio_record WHERE session='${sessionId}' and diagnostic_content ='${diagnostic_content}' `
 	}
 };

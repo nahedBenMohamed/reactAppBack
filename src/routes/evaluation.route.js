@@ -8,8 +8,10 @@ evaluationRouter
 	.patch('/', evaluationController.setAnalysesResult);
 
 evaluationRouter.route('/result')
-    .get(evaluationController.getAnalysesResultScores)
-	.patch(evaluationController.setDiagnosticResultDetail);
+	.get(evaluationController.getAnalysesResultScores);
+
+// need to be changed
+evaluationRouter.route('/phonetics').patch(evaluationController.setDiagnosticResultDetail);
 
 evaluationRouter.get('/articulations', evaluationController.getArticulationTypes);
 evaluationRouter.get('/lexicons', evaluationController.getLexiconErrorTypes);
