@@ -1,6 +1,6 @@
 
 const request = require("supertest");
-const app = require('../../config/appTestConfig');
+const appTest = require('../../config/appTestConfig');
 
 let userId = 0;
 let childId = 0;
@@ -20,24 +20,24 @@ beforeAll(() => {
 describe("GET /diagnostics", () => {
   describe("given a userId", () => {
     test("user sessions : should respond with a 200 status code", async () => {
-      const response = await request(app).get("/api/v1/diagnostics/sessions/" + userId)
+      const response = await request(appTest).get("/api/v1/diagnostics/sessions/" + userId)
       .query({childId, diagnosisId})
       expect(response.statusCode).toBe(200)
     })
     test("child groups : should respond with a 200 status code", async () => {
-      const response = await request(app).get("/api/v1/diagnostics/groups").query({childId})
+      const response = await request(appTest).get("/api/v1/diagnostics/groups").query({childId})
       expect(response.statusCode).toBe(200)
     })
   })
-  describe("given a param id & session",  async () =>{
+  describe("given a param id & session",  () =>{
     test("diagnostic details : should respond with a 200 status code", async () => {
-      const response = await request(app).get("/api/v1/diagnostics/" + diagnosisId).query({session})
+      const response = await request(appTest).get("/api/v1/diagnostics/" + diagnosisId).query({session})
       expect(response.statusCode).toBe(200)
     })
   })
-  describe("given userId, diagnosticId, childId",  async () => {
+  describe("given userId, diagnosticId, childId", () => {
     test("create New Session : should respond with a 200 status code", async () => {
-      const response = await request(app).get("/api/v1/diagnostics/sessions/initial/details").send({
+      const response = await request(appTest).get("/api/v1/diagnostics/sessions/initial/details").send({
         userId, 
         diagnosticId, 
         childId
@@ -45,15 +45,15 @@ describe("GET /diagnostics", () => {
       expect(response.statusCode).toBe(200)
     })
   })
-  describe("given session, diagnosticId, ",  async () => {
+  describe("given session, diagnosticId, ", () => {
     test("get Diagnostic Content : should respond with a 200 status code", async () => {
-      const response = await request(app).get("/api/v1/diagnostics/sessions/content/"+ diagnosticId).query({session})
+      const response = await request(appTest).get("/api/v1/diagnostics/sessions/content/"+ diagnosticId).query({session})
       expect(response.statusCode).toBe(200)
     })
   })
-  describe("given session, diagnosticId, ",  async () => {
+  describe("given session, diagnosticId, ", () => {
     test("update Diagnostic Content : should respond with a 200 status code", async () => {
-      const response = await request(app).patch(`/api/v1/diagnostics/sessions/${diagnosticId}/${session}`)
+      const response = await request(appTest).patch(`/api/v1/diagnostics/sessions/${diagnosticId}/${session}`)
       .send({"status": "finished"})
       .set('Accept', 'application/json');
       expect(response.statusCode).toBe(200)

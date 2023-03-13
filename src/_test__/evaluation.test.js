@@ -1,6 +1,6 @@
 
 const request = require("supertest");
-const app = require('../../config/appTestConfig');
+const appTest = require('../../config/appTestConfig');
 
 let childId = 0;
 let session = '';
@@ -27,11 +27,11 @@ beforeAll(() => {
 describe("GET /evaluation", () => {
   describe("/evaluation", () => {
     test("GET should respond with a 200 status code", async () => {
-      const response = await request(app).get("/api/v1/evaluation").query({childId})
+      const response = await request(appTest).get("/api/v1/evaluation").query({childId})
       expect(response.statusCode).toBe(200)
     })
     test("PATCH should respond with a 200 status code", async () => {
-      const response = await request(app).patch("/api/v1/evaluation")
+      const response = await request(appTest).patch("/api/v1/evaluation")
       .send({session, use_in_profile})
       .set('Accept', 'application/json');
       expect(response.statusCode).toBe(200)
@@ -43,7 +43,7 @@ describe("GET /evaluation/result", () => {
   describe("given a session : validate score structure", () => {
     diagnostics.forEach(id => {
       test("diagnostic " + id, async () => {
-        const response = await request(app).get("/api/v1/evaluation/result").query({session: "session_"+id})
+        const response = await request(appTest).get("/api/v1/evaluation/result").query({session: "session_"+id})
         response.body.data.scores.forEach(score => expect(score.values).toEqual({
           raw_value: expect.any(String),
           score: expect.any(Number),
@@ -55,52 +55,52 @@ describe("GET /evaluation/result", () => {
   })
   describe("given a session : validate data length", () => {
     test("diagnostic 1", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_1})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_1})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(3)
     })
     test("diagnostic 2", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_2})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_2})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(7)
     })
     test("diagnostic 3", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_3})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_3})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(2)
     })
     test("diagnostic 4", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_4})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_4})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(2)
     })
     test("diagnostic 5", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_5})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_5})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(10)
     })
     test("diagnostic 6", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_6})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_6})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(2)
     })
     test("diagnostic 7", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_7})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_7})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(2)
     })
     test("diagnostic 8", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_8})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_8})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(2)
     })
     test("diagnostic 9", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_9})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_9})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(4)
     })
     test("diagnostic 10", async () => {
-      const response = await request(app).get("/api/v1/evaluation/result").query({session: session_10})
+      const response = await request(appTest).get("/api/v1/evaluation/result").query({session: session_10})
       expect(response.statusCode).toBe(200)
       expect(response.body.data.scores).toHaveLength(3)
     })
