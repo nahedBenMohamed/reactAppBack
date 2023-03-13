@@ -1,7 +1,7 @@
 organization=nahedbenmohamed57
 projectKey=nahedbenmohamed57_reactappback
 serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.38177
+serverVersion=8.0.0.38913
 dashboardUrl=https://sonarcloud.io/dashboard?id=nahedbenmohamed57_reactappback
-ceTaskId=AYaD7ua2JK9evL5UMqVD
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AYaD7ua2JK9evL5UMqVD
+ceTaskId=AYbKwXL6WLJ_GBJ64M55
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AYbKwXL6WLJ_GBJ64M55
