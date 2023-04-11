@@ -3,7 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const storage = multer.diskStorage({
     destination(req, file, cb) {
-        const path = `uploads/files/${req.body.session}/`;
+        const path = `files/uploads/${req.body.session}/`;
         fs.mkdirSync(path, { recursive: true });
         cb(null, path);
     },
@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
         const date = Date.now();
         cb(null, `${req.body.session}-${date}.${file.mimetype.split('/')[1]}`);
         req.body.filename = `${req.body.session}-${date}.${file.mimetype.split('/')[1]}`
-        req.body.filepath = `uploads/files/${req.body.session}/`
+        req.body.filepath = `files/uploads/${req.body.session}/`
     },
 });
 const upload = multer({

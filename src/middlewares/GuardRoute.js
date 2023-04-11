@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const JwksRsa = require('jwks-rsa');
-// const jwt = require('express-jwt');
 
 module.exports = async (req, res, next) => {
 	if (!req.headers.authorization) {
@@ -42,19 +41,4 @@ module.exports = async (req, res, next) => {
 	} catch (error) {
 		console.log('Guard Route Error'.bold.red, error);
 	}
-};
-
-// second methods
-module.exports.RSJwtExpress = (req, res, next) => {
-	/*      const authorizeAccessToken = jwt.expressjwt({
-            secret: jwksRsa.expressJwtSecret({
-                  cache: false,
-                  rateLimit: false,
-                  jwksRequestsPerMinute: 50,
-                  jwksUri: `https://${process.env.AUTH0_CLIENT_DOMAIN}/.well-known/jwks.json`
-            }),
-            audience: process.env.AUTH0_API_AUDIENCE,
-            issuer: `https://${process.env.AUTH0_CLIENT_DOMAIN}/`,
-            algorithms: ['RS256']
-      }); */
 };

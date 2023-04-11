@@ -57,7 +57,8 @@ module.exports = {
 		(CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
 		 AND age_min<=diagnostic_session.child_age_in_months    AND age_max>=diagnostic_session.child_age_in_months )
 		FROM diagnostic_result where diagnostic_result.session="${session}" 
-		and diagnostic_result.diagnostic_content in (select id from diagnostic_content  where  (CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END))
+		and diagnostic_result.diagnostic_content in (select id from diagnostic_content  where
+		  (CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END))
 		) as process_percent 
 		FROM diagnostic_session WHERE session="${session}";`,
 
@@ -90,6 +91,62 @@ module.exports = {
 			 VALUES (${userId},${diagnosticId},${childId},(SELECT TIMESTAMPDIFF(MONTH, child.birthdate, CURDATE()) AS age_in_months 
 			 FROM child 
 			 WHERE child.id=${childId}))`,
+		DiagnosticExtrasQuestionClassificationResultQueries: (session, contentId, body, questionNumber) => {
+			let answer = '';
+			body.length > 0 &&
+				body.forEach((questionValue, i) => {
+					answer += `('${session}','${contentId}','5','3', '${questionNumber}', '${questionNumber}.','{}',"${questionValue}")`;
+					if (body.length - 1 > i) {
+						answer += ',';
+					}
+				});
+
+			return {
+				deleteOneByQuestionNumber: () =>
+					`DELETE FROM diagnostic_result_extended_answers  WHERE  session="${session}" AND belonging_id = ${questionNumber} AND diagnostic_content="${contentId}";`,
+				setNewOnes: () => {
+					let sql = `
+					INSERT INTO diagnostic_result_extended_answers 
+					(session,diagnostic_content,diagnostic,question_id,belonging_id,question_num,additional,answer) 
+					VALUES  ${answer}`;
+
+					return sql;
+				}
+			};
+		},
+
+		DiagnosticExtrasQuestionResultQueries: (session, contentId, body) => {
+			let setters = '',
+				answer = '',
+				updatesSettlers = '';
+
+			Object.keys(body).forEach((x, i) => {
+				setters += `${x}`;
+				answer += `"${body[x]}"`;
+				updatesSettlers = `${x}="${body[x]}"`;
+				if (Object.keys(body).length - 1 > i) {
+					setters += ',';
+					answer += ',';
+					updatesSettlers += ',';
+				}
+			});
+
+			return {
+				checkForExistingItem: () =>
+					`SELECT * FROM diagnostic_result_extended WHERE session="${session}" AND diagnostic_content="${contentId}" AND question_id="${body.question_id}"`,
+				setNewOne: () =>
+					`INSERT INTO diagnostic_result_extended (session,diagnostic_content,diagnostic,${setters})  VALUES ('${session}','${contentId}','5',${answer})`,
+				update: () =>
+					`UPDATE diagnostic_result_extended SET ${updatesSettlers} WHERE session="${session}" AND diagnostic_content="${contentId}" AND   question_id="${body.question_id}"`
+			};
+		},
+
+		DiagnosticUpdateClassificationAdditionalOption: (classificationId, body) => {
+			let sql = `UPDATE diagnostic_result_extended_answers SET additional='${JSON.stringify(
+				body
+			)}' WHERE id="${classificationId}" `;
+			return sql;
+		},
 		DiagnosticResultQueries: (session, contentId, body) => {
 			let setters = '',
 				answer = '',
@@ -160,31 +217,31 @@ module.exports = {
 					setter += ',';
 				}
 			});
-			console.log(setter);
+
 			return `UPDATE diagnostic_session SET ${setter} WHERE ${session ? `session="${session}"` : `id="${id}"`};`;
 		},
 		getDiagnosisExtendedQuestionContent: (session, content) => ` 
-				SELECT diagnostic_content_extended.*, diagnostic_result_extended_answers.answer
+				SELECT  * ,  (SELECT
+			      diagnostic_result_extended.answer FROM diagnostic_result_extended 
+				where session="${session}" AND diagnostic_result_extended.diagnostic_content= diagnostic_content_extended.diagnostic_content and 
+				diagnostic_content_extended.question_id = diagnostic_result_extended.question_id) as questionAnswer
 				FROM diagnostic_content_extended
-				LEFT JOIN (
-				SELECT *
-				FROM diagnostic_result_extended_answers
-				WHERE session ='${session}'
-				) AS diagnostic_result_extended_answers ON 
-				diagnostic_content_extended.question_id = diagnostic_result_extended_answers.question_id AND diagnostic_content_extended.diagnostic_content = diagnostic_result_extended_answers.diagnostic_content
+				 
 				WHERE diagnostic_content_extended.diagnostic_content = ${content}
-				ORDER BY diagnostic_content_extended.id ASC;
-  
-  `,
+				ORDER BY diagnostic_content_extended.id ASC ; `,
+		getDiagnosisClassificationQuestionContent: (session, content) => ` 
+		SELECT * FROM diagnostic_result_extended_answers 
+		WHERE session ='${session}' 
+		AND diagnostic_result_extended_answers.diagnostic_content='${content}' ;`,
+
 		getDiagnosisContent: (id, session, childAgeInMonths, questionIDS, hasDiagnosticExtension) => {
 			let extendQueries = '';
 			if (questionIDS?.length > 0) {
 				extendQueries = 'JSON_OBJECT(';
-				questionIDS.split(',').map((question, index) => {
+				questionIDS.split(',').forEach((question, index) => {
 					extendQueries += `'${question}',(select ${question}   from  diagnostic_result_detail_0${id}  where  diagnostic_session.session="${session}" and 
 					 diagnostic_result_detail_0${id}.diagnostic_content = diagnostic_content.id and diagnostic_result_detail_0${id}.session="${session}"  )`;
 					if (index < questionIDS.split(',').length - 1) extendQueries += ',';
-					return;
 				});
 				extendQueries += ') as extendedResult,';
 			}
@@ -213,6 +270,7 @@ module.exports = {
 			 AND diagnostic_content.age_max>=${childAgeInMonths}; `;
 			return sql;
 		},
+
 		getDiagnosticExtendsIds: (id, session, childAgeInMonths) => {
 			let sql = `SELECT ( SELECT GROUP_CONCAT(diagnostic_extended.answer_id SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic ) as answer_ids
 				FROM diagnostic_content JOIN diagnostic_session ON  diagnostic_session.session="${session}"   	WHERE diagnostic_content.diagnostic=${id}  AND
@@ -220,7 +278,6 @@ module.exports = {
 				 AND diagnostic_content.age_min<=${childAgeInMonths} 
 				AND diagnostic_content.age_max>=${childAgeInMonths};`;
 
-			console.log(sql);
 			return sql;
 		},
 
@@ -462,6 +519,7 @@ module.exports = {
 			`INSERT INTO diagnostic_result_audio_record (session,diagnostic_content,filepath,filename,duration_in_seconds) VALUES ('${session}','${diagnostic_content}','${filepath}','${filename}',${duration_in_seconds});`,
 		removeRecord: id => `DELETE FROM diagnostic_result_audio_record WHERE id=${id}`,
 		getRecords: (sessionId, diagnostic_content) =>
-			`SELECT * FROM diagnostic_result_audio_record WHERE session='${sessionId}' and diagnostic_content ='${diagnostic_content}' `
+			`SELECT * FROM diagnostic_result_audio_record WHERE session='${sessionId}' and diagnostic_content ='${diagnostic_content}' `,
+		removeRecords: filename => `DELETE FROM diagnostic_result_audio_record where filename LIKE '${filename}'`
 	}
 };

@@ -26,22 +26,23 @@ const setAnalysesResult = async body => {
 	let results = result.scores.map(async score => {
 		switch (score.type) {
 			case 'values':
-				data = {values: score.values, interpretation: score.interpretation}
+				data = { values: score.values, interpretation: score.interpretation };
 				break;
 			case 'table':
-				data = {head: score.head, values: score.values}
+				data = { head: score.head, values: score.values };
 				break;
 			case 'message':
-				data = {label: score.label, link: score.link}
+				data = { label: score.label, link: score.link };
 				break;
-			//need to be updated after adding score to test 5
-			case 'accordion':
 			case 'compact_values':
+				data = { values: score.values };
+			case 'accordion':
+			// must be updated for test 2 to have the same structure
 			case 'text':
 			case 'questions':
 			case 'answers':
 			default:
-				data = score.values
+				data = score.values;
 		}
 		let tvalue = await getTvalue(score);
 		let visible = await getScoreVisible(score);
@@ -99,8 +100,8 @@ const getAnalysesResultScores = async body => {
 		totalValue
 	);
 	conn.release();
-	if (diagnosticId == 7){
-		scores.reverse()
+	if (diagnosticId == 7) {
+		scores.reverse();
 	}
 	return { scores: scores, diagnostic_session: session[0]?.[0] };
 };
@@ -724,10 +725,10 @@ const getLexiconErrorTypes = async () => {
 	conn.release();
 	return data[0];
 };
-const getDiagnosisContentGrammars = async (body, childAgeInMonths) => {
+const getDiagnosisContentGrammars = async body => {
 	const conn = await connection.connection();
-	let sql = SQL.diagnosticsQueries.getDiagnosisGrammar(childAgeInMonths);
-	if (body.session) sql = SQL.diagnosticsQueries.getDiagnosisGrammarWitSession(body.session, childAgeInMonths);
+	let sql = SQL.diagnosticsQueries.getDiagnosisGrammar(body.childAgeInMonths);
+	if (body.session) sql = SQL.diagnosticsQueries.getDiagnosisGrammarWitSession(body.session, body.childAgeInMonths);
 	const data = await conn.execute(sql);
 	if (data?.[0].length > 0) {
 		let items = [];
@@ -1516,5 +1517,6 @@ module.exports = {
 	getAnalysesResultScores,
 	setDiagnosticResultDetail,
 	getArticulationTypes,
-	getLexiconErrorTypes
+	getLexiconErrorTypes,
+	getDiagnosisContentGrammars
 };

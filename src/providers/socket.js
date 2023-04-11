@@ -1,4 +1,4 @@
-var io = require('../').io;
+const io = require('../').io;
 
 io.on('connection', function (socket) {
 	/* 	console.clear();

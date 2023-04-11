@@ -10,6 +10,7 @@ const getDiagnostics = APIWrapper(async function (req) {
 		message: 'retrieved diagnostics  successfully'
 	});
 });
+
 const getDiagnosticDetails = APIWrapper(async function (req) {
 	const diagnostics = await diagnosticService.getDiagnosticDetails(req.params.id, req.query.session);
 	return new HTTPResponseBuilder({
@@ -18,6 +19,7 @@ const getDiagnosticDetails = APIWrapper(async function (req) {
 		message: 'retrieved diagnostics  successfully'
 	});
 });
+
 const getDiagnosticGroups = APIWrapper(async function (req) {
 	const groups = await diagnosticService.getDiagnosticGroups(req.query);
 	return new HTTPResponseBuilder({
@@ -26,6 +28,7 @@ const getDiagnosticGroups = APIWrapper(async function (req) {
 		message: 'retrieved diagnostics groups  successfully'
 	});
 });
+
 const getDiagnosticSessions = APIWrapper(async function (req) {
 	const sessions = await diagnosticService.getDiagnosticSessions(req.params.userId, req.query);
 	return new HTTPResponseBuilder({
@@ -34,6 +37,7 @@ const getDiagnosticSessions = APIWrapper(async function (req) {
 		message: 'retrieved diagnostics sessions  successfully'
 	});
 });
+
 const deleteDiagnosticSessionById = APIWrapper(async function (req) {
 	const session = await diagnosticService.deleteDiagnosticSessionById(req.params.sessionId);
 	if (session.affectedRows > 0)
@@ -60,10 +64,11 @@ const createNewSession = APIWrapper(async function (req) {
 	if (!checkDiagnostic[0] > 0) {
 		throw {
 			data: null,
-			message: 'There is no diagnostic with this id  ',
+			message: 'There is no diagnostic with this id',
 			status: 'BAD_REQUEST'
 		};
 	}
+
 	if (!checkChild[0] > 0) {
 		throw {
 			data: null,
@@ -71,6 +76,7 @@ const createNewSession = APIWrapper(async function (req) {
 			status: 'BAD_REQUEST'
 		};
 	}
+
 	if (!checkUser[0] > 0) {
 		throw {
 			data: null,
@@ -97,6 +103,7 @@ const updateDiagnosticSession = APIWrapper(async function (req) {
 			message: 'diagnostic session created  successfully'
 		});
 });
+
 const getDiagnosticContent = APIWrapper(async function (req) {
 	const content = await diagnosticService.getDiagnosticContentByDiagnosticId(
 		req.params.diagnosticId,
@@ -110,14 +117,32 @@ const getDiagnosticContent = APIWrapper(async function (req) {
 			message: 'diagnostic session created  successfully'
 		});
 });
+
 const addDiagnosisResult = APIWrapper(async function (req) {
+	let questionNumber;
+
+	if (req.body?.extraContent?.questionNumber) {
+		questionNumber = req.body.extraContent.questionNumber;
+		delete req.body.extraContent.questionNumber;
+	}
+
 	const result = await diagnosticService.addDiagnosisResult(req.params.contentId, req.body);
+
+	if (questionNumber && req.body.extraContent && Object.keys(req.body.extraContent).length > 0) {
+		await diagnosticService.setDiagnosticClassificationResult(
+			req.body.session,
+			req.params.contentId,
+			req.body.extraContent,
+			questionNumber
+		);
+	}
 	return new HTTPResponseBuilder({
 		status: 'OK',
 		data: result,
 		message: 'result diagnostics session added successfully'
 	});
 });
+
 module.exports = {
 	getDiagnostics,
 	getDiagnosticDetails,

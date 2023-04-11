@@ -26,6 +26,14 @@ module.exports = {
 			message: 'analyses result score details retrieved  successfully'
 		});
 	}),
+	getDiagnosisContentGrammars: APIWrapper(async function (req) {
+		const result = await evaluationService.getDiagnosisContentGrammars(req.query);
+		return new HTTPResponseBuilder({
+			status: 'OK',
+			data: result,
+			message: 'analyses result score for test 5 details retrieved  successfully'
+		});
+	}),
 	setDiagnosticResultDetail: APIWrapper(async function (req) {
 		const result = await evaluationService.setDiagnosticResultDetail(req.body);
 		return new HTTPResponseBuilder({
