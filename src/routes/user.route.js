@@ -1,9 +1,14 @@
 const userRouter = require('express').Router();
-const { userController } = require('../controllers');
+const { userController } = require('../controllers_v2');
 const { userAccessList } = require('../middlewares/User/userAuth');
 const { userValidation } = require('../validation');
 
-userRouter.get('/child/:userId',  userValidation.validateGetChildByUserId,userAccessList, userController.getChildByUserId);
+userRouter.get(
+	'/child/:userId',
+	userValidation.validateGetChildByUserId,
+	userAccessList,
+	userController.getChildByUserId
+);
 
 /*  */
 userRouter.route('/').post(userValidation.ValidateInsetNewUser, userController.createNewUserForTheFirstSignUp);

@@ -161,11 +161,6 @@ const getAnalysesValue = async (
 						(await getRawValueByTagName(body.session, 'Nomen')) +
 						(await getRawValueAppendByTagName(body.session, 'Nomen', '02', 'answer_01'));
 					break;
-				case 'Verben (semantisch)':
-					raw_value_specific =
-						(await getRawValueByTagName(body.session, 'Verb')) +
-						(await getRawValueAppendByTagName(body.session, 'Verb', '02', 'answer_01'));
-					break;
 				case 'Aussprache: Phonologie':
 					raw_value_specific = +rawValue + (await getRawValueAppend(body.session, '02', 'answer_03'));
 					break;
@@ -208,12 +203,12 @@ const getAnalysesValue = async (
 					break;
 				}
 				case 'Score A': {
-					let grammars = await getDiagnosisContentGrammars(body, childAgeInMonths);
+					let grammars = await getDiagnosisContentGrammars(body);
 					raw_value = grammars?.scores?.total.a;
 					break;
 				}
 				case 'Score B ': {
-					let grammars = await getDiagnosisContentGrammars(body, childAgeInMonths);
+					let grammars = await getDiagnosisContentGrammars(body);
 					raw_value = grammars?.scores?.total.b;
 					break;
 				}

@@ -1,6 +1,6 @@
 const childRouter = require('express').Router();
 
-const { childController } = require('../controllers');
+const { childController } = require('../controllers_v2');
 const { userAccessList, userChildAccess } = require('../middlewares/User/userAuth');
 const { childValidation } = require('../validation');
 
