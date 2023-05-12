@@ -41,10 +41,8 @@ module.exports = {
 
 		getDiagnosisDetails: (diagnosisId, childAgeInMonths, sessionStartedStatus) =>
 			`SELECT diagnostic.*,
-			(SELECT COUNT(id) FROM diagnostic_content WHERE diagnostic=diagnostic.id  AND ${
-				sessionStartedStatus === 'training' ? " training='yes'" : " training='no'"
-			}${
-				childAgeInMonths ? ' AND age_min<=' + childAgeInMonths + ' AND age_max>= ' + childAgeInMonths : ' '
+			(SELECT COUNT(id) FROM diagnostic_content WHERE diagnostic=diagnostic.id  AND ${sessionStartedStatus === 'training' ? " training='yes'" : " training='no'"
+			}${childAgeInMonths ? ' AND age_min<=' + childAgeInMonths + ' AND age_max>= ' + childAgeInMonths : ' '
 			} ) as diagnostic_content_length,
 
 			(SELECT GROUP_CONCAT(diagnostic_image.file) FROM diagnostic_image WHERE diagnostic_image.diagnostic = diagnostic.id) as images
@@ -52,10 +50,10 @@ module.exports = {
 			WHERE diagnostic.id=${diagnosisId};`,
 
 		getDiagnosisSessionDetails: session => `SELECT *,
-		(SELECT COUNT(answer)*100.0 / ( select COUNT(*) from diagnostic_content
+		(SELECT TRUNCATE(COUNT(answer)*100.0 / ( select COUNT(*) from diagnostic_content
 		where diagnostic_content.diagnostic=diagnostic_session.diagnostic  AND 
 		(CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
-		 AND age_min<=diagnostic_session.child_age_in_months    AND age_max>=diagnostic_session.child_age_in_months )
+		 AND age_min<=diagnostic_session.child_age_in_months    AND age_max>=diagnostic_session.child_age_in_months ),0 )
 		FROM diagnostic_result where diagnostic_result.session="${session}" 
 		and diagnostic_result.diagnostic_content in (select id from diagnostic_content  where
 		  (CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END))
@@ -203,10 +201,10 @@ module.exports = {
 		},
 		updateSessionToken: ({ id, body, session }) => {
 			let setter = session
-				? `process_percent=(SELECT COUNT(answer)*100.0 / ( select COUNT(*) from diagnostic_content
+				? `process_percent=(SELECT TRUNCATE(COUNT(answer)*100.0 / ( select COUNT(*) from diagnostic_content
 			where diagnostic_content.diagnostic=diagnostic_session.diagnostic  AND 
 			(CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
-			 AND age_min<=diagnostic_session.child_age_in_months    AND age_max>=diagnostic_session.child_age_in_months )
+			 AND age_min<=diagnostic_session.child_age_in_months    AND age_max>=diagnostic_session.child_age_in_months ),0)
 			FROM diagnostic_result where diagnostic_result.session="${session}"
 			and diagnostic_result.diagnostic_content in (select id from diagnostic_content  where  (CASE WHEN diagnostic_session.started="training" 
 			THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END))), `
@@ -217,8 +215,8 @@ module.exports = {
 					setter += ',';
 				}
 			});
-
-			return `UPDATE diagnostic_session SET ${setter} WHERE ${session ? `session="${session}"` : `id="${id}"`};`;
+			let sessionId = session ? `session="${session}"` : `id="${id}"`;
+			return `UPDATE diagnostic_session SET ${setter} WHERE ${sessionId};`;
 		},
 		getDiagnosisExtendedQuestionContent: (session, content) => ` 
 				SELECT  * ,  (SELECT
@@ -258,10 +256,9 @@ module.exports = {
 			(SELECT GROUP_CONCAT(diagnostic_content_image.file SEPARATOR ',') FROM diagnostic_content_image
 			 WHERE diagnostic_content_image.diagnostic_content = diagnostic_content.id) as image
 			 FROM diagnostic_content
-			 ${
-					hasDiagnosticExtension
-						? `LEFT JOIN (SELECT * FROM diagnostic_result_detail_0${id} WHERE session='${session}') diagnostic_result_detail_0${id}  ON diagnostic_content.id = diagnostic_result_detail_0${id} .diagnostic_content`
-						: ''
+			 ${hasDiagnosticExtension
+					? `LEFT JOIN (SELECT * FROM diagnostic_result_detail_0${id} WHERE session='${session}') diagnostic_result_detail_0${id}  ON diagnostic_content.id = diagnostic_result_detail_0${id} .diagnostic_content`
+					: ''
 				}
 			 JOIN diagnostic_session ON  diagnostic_session.session="${session}"  
 			 WHERE diagnostic_content.diagnostic=${id}  AND

@@ -1,6 +1,9 @@
 const { diagnosticService, userService, childService } = require('../services');
 
-const getDiagnostics = async function (req, res) {
+//I have converted the functions to arrow functions,
+//and also refactored the response status and message in some functions for better readability.
+
+const getDiagnostics = async (req, res) => {
 	try {
 		const diagnostics = await diagnosticService.getDiagnostics();
 		return res.status(200).json({
@@ -17,7 +20,7 @@ const getDiagnostics = async function (req, res) {
 	}
 };
 
-const getDiagnosticDetails = async function (req, res) {
+const getDiagnosticDetails = async (req, res) => {
 	try {
 		const diagnostics = await diagnosticService.getDiagnosticDetails(req.params.id, req.query.session);
 		return res.status(200).json({
@@ -34,7 +37,7 @@ const getDiagnosticDetails = async function (req, res) {
 	}
 };
 
-const getDiagnosticGroups = async function (req, res) {
+const getDiagnosticGroups = async (req, res) => {
 	try {
 		const groups = await diagnosticService.getDiagnosticGroups(req.query);
 		return res.status(200).json({
@@ -51,7 +54,7 @@ const getDiagnosticGroups = async function (req, res) {
 	}
 };
 
-const getDiagnosticSessions = async function (req, res) {
+const getDiagnosticSessions = async (req, res) => {
 	try {
 		const sessions = await diagnosticService.getDiagnosticSessions(req.params.userId, req.query);
 		return res.status(200).json({
@@ -68,22 +71,14 @@ const getDiagnosticSessions = async function (req, res) {
 	}
 };
 
-const deleteDiagnosticSessionById = async function (req, res) {
+const deleteDiagnosticSessionById = async (req, res) => {
 	try {
 		const session = await diagnosticService.deleteDiagnosticSessionById(req.params.sessionId);
-		if (session.affectedRows > 0) {
-			return res.status(200).json({
-				status: 200,
-				data: {},
-				message: 'Session deleted successfully'
-			});
-		} else {
-			return res.status(400).json({
-				status: 400,
-				data: {},
-				message: 'Session ID not found'
-			});
-		}
+		return res.status(session.affectedRows > 0 ? 200 : 400).json({
+			status: session.affectedRows > 0 ? 200 : 400,
+			data: {},
+			message: session.affectedRows > 0 ? 'Session deleted successfully' : 'Session ID not found'
+		});
 	} catch (e) {
 		return res.status(500).json({
 			status: 500,
@@ -93,35 +88,23 @@ const deleteDiagnosticSessionById = async function (req, res) {
 	}
 };
 
-const createNewSession = async function (req, res) {
+const createNewSession = async (req, res) => {
 	try {
 		let { userId, diagnosticId, childId } = req.body;
 
-		let checkDiagnostic = await diagnosticService.getDiagnosticDetails(diagnosticId);
-		let checkChild = await childService.getChildById(childId);
-		let checkUser = await userService.getUserById(userId);
+		let checkDiagnostic = (await diagnosticService.getDiagnosticDetails(diagnosticId))[0];
+		let checkChild = (await childService.getChildById(childId))[0];
+		let checkUser = (await userService.getUserById(userId))[0];
 
-		if (!checkDiagnostic[0] > 0) {
+		if (!checkDiagnostic|| !checkChild || !checkUser[0]) {
 			return res.status(400).json({
 				status: 400,
 				data: null,
-				message: 'There is no diagnostic with this id'
-			});
-		}
-
-		if (!checkChild[0] > 0) {
-			return res.status(400).json({
-				status: 400,
-				data: null,
-				message: 'There is no child with this id'
-			});
-		}
-
-		if (!checkUser[0] > 0) {
-			return res.status(400).json({
-				status: 400,
-				data: null,
-				message: 'There is no user with this id'
+				message: !checkDiagnostic
+					? 'There is no diagnostic with this id'
+					: !checkChild[0]
+					? 'There is no child with this id'
+					: 'There is no user with this id'
 			});
 		}
 
@@ -144,22 +127,14 @@ const createNewSession = async function (req, res) {
 	}
 };
 
-const updateDiagnosticSession = async function (req, res) {
+const updateDiagnosticSession = async (req, res) => {
 	try {
 		const session = await diagnosticService.updateDiagnosticSession(req.params.id, req.body, req.params.session);
-		if (session) {
-			return res.status(200).json({
-				status: 200,
-				data: {},
-				message: 'diagnostic session updated successfully'
-			});
-		} else {
-			return res.status(400).json({
-				status: 400,
-				data: null,
-				message: 'Bad request'
-			});
-		}
+		return res.status(session ? 200 : 400).json({
+			status: session ? 200 : 400,
+			data: {},
+			message: session ? 'diagnostic session updated successfully' : 'Bad request'
+		});
 	} catch (err) {
 		return res.status(500).json({
 			status: 500,
@@ -169,13 +144,12 @@ const updateDiagnosticSession = async function (req, res) {
 	}
 };
 
-const getDiagnosticContent = async function (req, res) {
+const getDiagnosticContent = async (req, res) => {
 	try {
 		const content = await diagnosticService.getDiagnosticContentByDiagnosticId(
 			req.params.diagnosticId,
 			req.query.session
 		);
-
 		return res.status(200).json({
 			status: 200,
 			data: content,
@@ -190,10 +164,9 @@ const getDiagnosticContent = async function (req, res) {
 	}
 };
 
-const addDiagnosisResult = async function (req, res) {
+const addDiagnosisResult = async (req, res) => {
 	try {
 		let questionNumber;
-
 		if (req.body?.extraContent?.questionNumber) {
 			questionNumber = req.body.extraContent.questionNumber;
 			delete req.body.extraContent.questionNumber;

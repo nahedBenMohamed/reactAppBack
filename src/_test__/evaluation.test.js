@@ -6,7 +6,7 @@ let childId = 0;
 let session = '';
 let use_in_profile = 'yes';
 let diagnostics = [];
-
+let session_1, session_2, session_3, session_4, session_5, session_6, session_7, session_8, session_9, session_10;
 beforeAll(() => {
   childId = 689
   session = '0776080d6144d387fe7da83bfd020f9206218c8b'

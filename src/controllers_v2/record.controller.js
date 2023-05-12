@@ -1,6 +1,6 @@
 const { recordService } = require('../services');
 
-const addRecord = async function (req, res) {
+const addRecord = async (req, res) => {
 	try {
 		const result = await recordService.createRecord(req.body);
 		return res.status(201).json({
@@ -17,7 +17,7 @@ const addRecord = async function (req, res) {
 	}
 };
 
-const removeRecord = async function (req, res) {
+const removeRecord = async (req, res) => {
 	try {
 		const result = await recordService.removeRecord(req.params.id);
 		if (result.affectedRows > 0) {
@@ -42,7 +42,7 @@ const removeRecord = async function (req, res) {
 	}
 };
 
-const getRecords = async function (req, res) {
+const getRecords = async (req, res) => {
 	try {
 		const result = await recordService.getRecords(req.params.id, req.params.diagnosticId);
 		return res.status(200).json({

@@ -2,93 +2,138 @@ const { connection } = require('../providers');
 const { SQL } = require('../../config');
 const { getChildById } = require('./child.service');
 const { parseDataJson } = require('../helpers/properties');
+const { formatAccordionData } = require('../helpers');
 
 const getAnalyses = async query => {
-	const conn = await connection.connection();
-	let sql = query.childId
-		? SQL.evaluationsQueries.getAnalysesByChildId(query.childId)
-		: SQL.evaluationsQueries.getAnalyses;
-	let data = await conn.execute(sql);
-	conn.release();
-	return data[0];
-};
-const setAnalysesResult = async body => {
-	const conn = await connection.connection();
-	let result = await getAnalysesResultScores(body);
-	if (body.use_in_profile === 'yes') {
-		await conn.execute(
-			SQL.evaluationsQueries.updateAnalysesResultProfile(
-				result?.diagnostic_session.diagnostic,
-				result.diagnostic_session.child
-			)
-		);
+	try {
+		const conn = await connection.connection(); // Establish a database connection
+		let sql = query.childId
+			? SQL.evaluationsQueries.getAnalysesByChildId(query.childId)
+			: SQL.evaluationsQueries.getAnalyses;
+		const data = await conn.execute(sql); // Execute the query and store the results in the "data" variable
+		conn.release(); // Release the database connection
+		return data[0]; // Return the first row of the result set
+	} catch (error) {
+		console.error(error); // Log any errors to the console
+		throw error; // Re-throw the error to allow the calling function to handle it
 	}
-	let results = result.scores.map(async score => {
-		switch (score.type) {
-			case 'values':
-				data = { values: score.values, interpretation: score.interpretation };
-				break;
-			case 'table':
-				data = { head: score.head, values: score.values };
-				break;
-			case 'message':
-				data = { label: score.label, link: score.link };
-				break;
-			case 'compact_values':
-				data = { values: score.values };
-			case 'accordion':
-			// must be updated for test 2 to have the same structure
-			case 'text':
-			case 'questions':
-			case 'answers':
-			default:
-				data = score.values;
-		}
-		let tvalue = await getTvalue(score);
-		let visible = await getScoreVisible(score);
-		let sql = SQL.evaluationsQueries.updateAnalysesResult(
-			score.type,
-			visible,
-			tvalue,
-			JSON.stringify(data),
-			body.session,
-			score.scoreName
-		);
-		if (body.use_in_profile)
-			sql = SQL.evaluationsQueries.updateAnalysesResultWithProfile(
-				score.type,
-				visible,
-				tvalue,
-				JSON.stringify(data),
-				body.session,
-				body.use_in_profile,
-				score.scoreName
-			);
-		return await conn.execute(sql);
-	});
-
-	conn.release();
-	return results;
 };
+
+const setAnalysesResult = async body => {
+	try {
+		const conn = await connection.connection(); // Establish a database connection
+
+		// Call getAnalysesResultScores() to fetch the result scores
+		let result = await getAnalysesResultScores(body);
+
+		// If use_in_profile is set to 'yes', update the analyses result profile in the database
+		if (body.use_in_profile === 'yes') {
+			await conn.execute(
+				SQL.evaluationsQueries.updateAnalysesResultProfile(
+					result?.diagnostic_session.diagnostic,
+					result.diagnostic_session.child
+				)
+			);
+		}
+
+		// Process the scores and update the analyses result in the database
+		let results = await Promise.all(
+			result.scores.map(async score => {
+				let data = {};
+				switch (score.type) {
+					case 'values':
+						data = { values: score.values, interpretation: score.interpretation };
+						break;
+					case 'table':
+						data = { head: score.head, values: score.values };
+						break;
+					case 'message':
+						data = { label: score.label, link: score.link };
+						break;
+					case 'compact_values':
+						data = { values: score.values };
+						break;
+					case 'accordion':
+						data = { accordion: formatAccordionData(score.accordion) };
+						break;
+					case 'text':
+					case 'questions':
+					case 'answers':
+					default:
+						data = score.values;
+				}
+
+				// Get the tvalue and visibility of the score
+				let tvalue = await getTvalue(score);
+				let visible = await getScoreVisible(score);
+
+				// Construct the SQL query to update the analyses result in the database
+				let sql = SQL.evaluationsQueries.updateAnalysesResult(
+					score.type,
+					visible,
+					tvalue,
+					JSON.stringify(data),
+					body.session,
+					score.scoreName
+				);
+
+				// If use_in_profile is set to 'yes', add the profile data to the SQL query
+				if (body.use_in_profile) {
+					sql = SQL.evaluationsQueries.updateAnalysesResultWithProfile(
+						score.type,
+						visible,
+						tvalue,
+						JSON.stringify(data),
+						body.session,
+						body.use_in_profile,
+						score.scoreName
+					);
+				}
+
+				// Execute the SQL query and return the result
+				return await conn.execute(sql);
+			})
+		);
+
+		conn.release(); // Release the database connection
+		return results;
+	} catch (error) {
+		console.error(error); // Log any errors to the console
+		throw error; // Re-throw the error to allow the calling function to handle it
+	}
+};
+
 const getAnalysesResultScores = async body => {
-	const conn = await connection.connection();
+	const conn = await connection.connection(); // Establish a database connection
+
+	// Fetch the diagnosis session details from the database
 	const session = await conn.execute(SQL.diagnosticsQueries.getDiagnosisSessionDetails(body.session));
 	let diagnosticId = session[0]?.[0]?.diagnostic;
+
+	// Fetch the child details from the database
 	let child = await getChildById(session[0]?.[0]?.child);
 	let childAgeInMonths = session[0]?.[0]?.child_age_in_months;
 	let childGender = child?.[0]?.gender == 1 ? 'm' : 'w';
 	let childLanguage = child?.[0]?.languages.length > 1 ? 'm' : 'e';
+
+	// Fetch the raw and total values from the database
 	let data = await conn.execute(SQL.evaluationsQueries.getSumResultAnalysesBySession(body.session));
 	let rawValue = data[0]?.[0].raw_value;
 	let totalValue = +data[0]?.[0].total_value;
+
+	// Fetch the analyses diagnosis details from the database
 	let result = await conn.execute(
 		SQL.evaluationsQueries.getAnalysesDiagnosis(diagnosticId, childAgeInMonths, childGender, childLanguage)
 	);
+
+	// Fetch the raw values for Akkusativ and Dativ for diagnosis ID 9
 	let rawValueAkkusativ, rawValueDativ;
 	if (diagnosticId == 9) {
 		rawValueAkkusativ = getRawValueByTagName(session, 'Akkusativ');
 		rawValueDativ = getRawValueByTagName(session, 'Dativ');
 	}
+
+	// Calculate the scores
 	let scores = await getAnalysesValue(
 		result,
 		diagnosticId,
@@ -99,10 +144,14 @@ const getAnalysesResultScores = async body => {
 		childAgeInMonths,
 		totalValue
 	);
-	conn.release();
+
+	conn.release(); // Release the database connection
+
+	// Reverse the scores array for diagnosis ID 7
 	if (diagnosticId == 7) {
 		scores.reverse();
 	}
+
 	return { scores: scores, diagnostic_session: session[0]?.[0] };
 };
 const getAnalysesValue = async (
@@ -264,6 +313,9 @@ const getAnalysesValue = async (
 			return scores;
 		})
 	);
+	//respect same view np order (Wortschatz: Nomen, Wortschatz: Verben,Aussprache: Phonologie)
+	const last = scores.pop();
+	scores.unshift(last);
 	switch (diagnosticId) {
 		case 2:
 			scores = await getScoreForTest2(
@@ -305,84 +357,142 @@ const getAnalysesValue = async (
 	return scores;
 };
 const getRawValueByTagName = async (session, tagName) => {
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.evaluationsQueries.getRawValueByTag(session, tagName));
-	conn.release();
-	return +data[0]?.[0].raw_value;
-};
-const getRawValueAppendByTagName = async (session, tagName, id, answerId) => {
-	const conn = await connection.connection();
-	let dataAppend = await conn.execute(SQL.evaluationsQueries.getRawValueAppendByTag(id, answerId, session, tagName));
-	conn.release();
-	return +dataAppend?.[0]?.[0].raw_value_append;
-};
-const getRawValueAppend = async (session, id, answerId) => {
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.evaluationsQueries.getRawValueAppend(id, answerId, session));
-	conn.release();
-	return +data?.[0]?.[0].raw_value_append;
-};
-const getRawValues = async (session, diagnosticId) => {
-	let raw_values = [];
-	if (diagnosticId == 1) {
+	// Use a try-catch block to catch any errors that may occur during the execution of the code.
+	try {
+		// Rename the `data` variable to `queryResult` to make its purpose clearer.
 		const conn = await connection.connection();
-		let data = await conn.execute(SQL.evaluationsQueries.getTagsResult(session));
-		data[0]?.map(item => {
-			return raw_values.push({ name: item.name, value: item.raw_value });
-		});
+		const queryResult = await conn.execute(SQL.evaluationsQueries.getRawValueByTag(session, tagName));
 		conn.release();
+		// Add a fallback value of 0 in case the query result is undefined or the raw_value property is undefined.
+		return +queryResult?.[0]?.[0]?.raw_value || 0;
+	} catch (error) {
+		// Add an error log to the console in case an error occurs during the execution of the code.
+		console.error(`Error in getRawValueByTagName: ${error}`);
+		return 0;
 	}
+};
+
+const getRawValueAppendByTagName = async (session, tagName, id, answerId) => {
+	// Use a try-catch block to catch any errors that may occur during the execution of the code.
+	try {
+		// Rename the `dataAppend` variable to `queryResult` to make its purpose clearer.
+		const conn = await connection.connection();
+		const queryResult = await conn.execute(
+			SQL.evaluationsQueries.getRawValueAppendByTag(id, answerId, session, tagName)
+		);
+		conn.release();
+		// Add a fallback value of 0 in case the query result is undefined or the raw_value_append property is undefined.
+		return +queryResult?.[0]?.[0]?.raw_value_append || 0;
+	} catch (error) {
+		// Add an error log to the console in case an error occurs during the execution of the code.
+		console.error(`Error in getRawValueAppendByTagName: ${error}`);
+		return 0;
+	}
+};
+
+const getRawValueAppend = async (session, id, answerId) => {
+	// Use a try-catch block to catch any errors that may occur during the execution of the code.
+	try {
+		// Rename the `data` variable to `queryResult` to make its purpose clearer.
+		const conn = await connection.connection();
+		const queryResult = await conn.execute(SQL.evaluationsQueries.getRawValueAppend(id, answerId, session));
+		conn.release();
+		// Add a fallback value of 0 in case the query result is undefined or the raw_value_append property is undefined.
+		return +queryResult?.[0]?.[0]?.raw_value_append || 0;
+	} catch (error) {
+		// Add an error log to the console in case an error occurs during the execution of the code.
+		console.error(`Error in getRawValueAppend: ${error}`);
+		return 0;
+	}
+};
+
+const getRawValues = async (session, diagnosticId) => {
+	// Initialize an empty array for raw_values.
+	let raw_values = [];
+
+	if (diagnosticId) {
+		// Use a try-catch block to catch any errors that may occur during the execution of the code.
+		try {
+			const conn = await connection.connection();
+			const queryResult = await conn.execute(SQL.evaluationsQueries.getTagsResult(session));
+			// Use the Array.prototype.map method to create an array of objects with the name and value properties.
+			raw_values = queryResult?.[0]?.map(item => ({ name: item.name, value: item.raw_value })) || [];
+			conn.release();
+		} catch (error) {
+			console.error(`Error in getRawValues: ${error}`);
+			return raw_values;
+		}
+	}
+
+	// Return the raw_values array.
 	return raw_values;
 };
+
 const diagnostic_10_Result = async (session, diagnosticId, rawValue) => {
+	// Initialize an empty array for scoreTable.
 	let scoreTable = [];
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.diagnosticsQueries.getDiagnosisContentById(diagnosticId));
-	data[0]?.map(item => {
-		return scoreTable.push({
-			scoreName: 'Detailauswertung ' + item.name,
-			type: 'table',
-			visible: 'yes',
-			head: ['label_skill', 'label_exists'],
-			values: []
-		});
-	});
-	let resultExtend = await conn.execute(SQL.evaluationsQueries.getResultDiagnosticExtend(diagnosticId, session));
-	let show_do_extended_analysis = true;
-	resultExtend?.[0]?.map(async item => {
-		let answerScore = 'Nein';
-		if (item.answer == 'checked') {
-			rawValue = +rawValue + 1;
-			answerScore = 'Ja';
-		}
-		if (item.answer != null) show_do_extended_analysis = false;
-		let foundIndex = scoreTable.findIndex(x => x.scoreName == 'Detailauswertung ' + item.name);
-		scoreTable[foundIndex].values.push({
-			label: item.label,
-			score: answerScore
-		});
-	});
-	if (show_do_extended_analysis) {
-		scoreTable.push({
-			scoreName: 'Bitte beachten',
-			type: 'message',
-			visible: 'yes',
-			label: 'label_do_extended_analysis_for_tvalue',
-			link: {
-				tabSelected: 1,
-				label: 'btn_go_to_data'
+
+	try {
+		const conn = await connection.connection();
+		const diagnosisContentResult = await conn.execute(SQL.diagnosticsQueries.getDiagnosisContentById(diagnosticId));
+		// Use the Array.prototype.map method to create an array of objects for scoreTable.
+		scoreTable =
+			diagnosisContentResult?.[0]?.map(item => ({
+				scoreName: 'Detailauswertung ' + item.name,
+				type: 'table',
+				visible: 'yes',
+				head: ['label_skill', 'label_exists'],
+				values: []
+			})) || [];
+
+		const resultExtend = await conn.execute(
+			SQL.evaluationsQueries.getResultDiagnosticExtend(diagnosticId, session)
+		);
+		let show_do_extended_analysis = true;
+		// Use a for-of loop instead of Array.prototype.map to work with async-await.
+		for (const item of resultExtend?.[0] || []) {
+			let answerScore = 'Nein';
+			if (item.answer == 'checked') {
+				rawValue = +rawValue + 1;
+				answerScore = 'Ja';
 			}
-		});
-		scoreTable.forEach(score => {
-			if (score.type == 'table') score.visible = 'no';
-		});
+			if (item.answer != null) show_do_extended_analysis = false;
+			const foundIndex = scoreTable.findIndex(x => x.scoreName == 'Detailauswertung ' + item.name);
+			scoreTable[foundIndex].values.push({
+				label: item.label,
+				score: answerScore
+			});
+		}
+
+		if (show_do_extended_analysis) {
+			scoreTable.push({
+				scoreName: 'Bitte beachten',
+				type: 'message',
+				visible: 'yes',
+				label: 'label_do_extended_analysis_for_tvalue',
+				link: {
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
+			});
+			// Use Array.prototype.forEach instead of for-of loop to set table scores to not visible.
+			scoreTable.forEach(score => {
+				if (score.type == 'table') score.visible = 'no';
+			});
+		}
+
+		conn.release();
+		return { scoreTable: scoreTable, rawValue: rawValue };
+	} catch (error) {
+		console.error(`Error in diagnostic_10_Result: ${error}`);
+		return { scoreTable: scoreTable, rawValue: rawValue };
 	}
-	conn.release();
-	return { scoreTable: scoreTable, rawValue: rawValue };
 };
+
 const getRawValueForExtendAnswer = async (session, score_name) => {
 	const conn = await connection.connection();
 	const extendAnswer = await conn.execute(SQL.evaluationsQueries.getExtendedAnswers(session));
+
 	let words = 0,
 		sentences = 0;
 	let full = 0,
@@ -393,7 +503,9 @@ const getRawValueForExtendAnswer = async (session, score_name) => {
 	let ratio = '-';
 	let type_total;
 	let decimals = 0;
-	extendAnswer?.[0]?.map(async answer => {
+
+	// Use a for-of loop instead of Array.prototype.map to work with async-await.
+	for (const answer of extendAnswer?.[0] || []) {
 		if (score_name == 'Vollständigkeit') {
 			let additional = JSON.parse('[' + answer.additional + ']');
 			if (additional[0]?.class == 'green') full++;
@@ -405,26 +517,36 @@ const getRawValueForExtendAnswer = async (session, score_name) => {
 			words += answer.answer.split(' ').length;
 			sentences++;
 		}
-	});
-	if (score_name == 'MLU') {
-		rawValue = sentences > 0 ? (words / sentences).toFixed(2) : 0;
-		rawValue = rawValue.substring(0, rawValue.length - 1);
-		decimals = 1;
-	} else {
-		rawValue = total > 0 ? Math.trunc((full / total) * 100) : 0;
 	}
 
-	type_total = type1 + type2;
-	if (type_total > 0)
-		ratio = Math.round((type1 / type_total) * 100) + '% - ' + Math.round((type2 / type_total) * 100) + '%';
-	conn.release();
-	return { rawValue: rawValue, ratio: ratio, decimals: decimals };
+	if (score_name == 'MLU') {
+		// Calculate rawValue and set decimals to 1 for MLU score.
+		let rawValue = sentences > 0 ? (words / sentences).toFixed(2) : 0;
+		rawValue = rawValue.substring(0, rawValue.length - 1);
+		decimals = 1;
+		// Return object with rawValue, ratio, and decimals properties.
+		return { rawValue: +rawValue, ratio: ratio, decimals: decimals };
+	} else {
+		// Calculate rawValue for Vollständigkeit score.
+		let rawValue = total > 0 ? Math.trunc((full / total) * 100) : 0;
+		type_total = type1 + type2;
+		// Calculate ratio if type_total is greater than 0.
+		if (type_total > 0) {
+			ratio = Math.round((type1 / type_total) * 100) + '% - ' + Math.round((type2 / type_total) * 100) + '%';
+		}
+		conn.release();
+		// Return object with rawValue, ratio, and decimals properties.
+		return { rawValue: rawValue, ratio: ratio, decimals: decimals };
+	}
 };
+
 const getScoreTableByTag = async (scores, session, childAgeInMonths, diagnosticId, total) => {
 	let values = [];
 	const conn = await connection.connection();
 	const resultTag = await conn.execute(SQL.evaluationsQueries.getResultTag(session, childAgeInMonths, diagnosticId));
-	resultTag?.[0]?.map(async item => {
+
+	// Use a for-of loop instead of Array.prototype.map to work with async-await.
+	for (const item of resultTag?.[0] || []) {
 		if (item.count_tag > 0) {
 			total = total + item.count_incorrect;
 			values.push({
@@ -433,22 +555,28 @@ const getScoreTableByTag = async (scores, session, childAgeInMonths, diagnosticI
 				count_incorrect: item.count_incorrect
 			});
 		}
-	});
+	}
+
 	scores.push({
 		scoreName: 'Detailauswertung',
 		type: 'table',
 		head: ['label_structure', 'label_mistakes_per_items', 'label_error_distribution'],
+		// Use await to calculate the error distribution and set the 'values' property.
 		values: await calculateErrorDistribution(values, 'count_incorrect', total, 'error_distribution')
 	});
+
 	conn.release();
 	return scores;
 };
+
 const getScoreExtend = async (scores, session, needs_extended_analysis, total) => {
 	const conn = await connection.connection();
 
 	let show_do_extended_analysis = false;
 	let values = [];
 	const resultExtended = await conn.execute(SQL.diagnosticsQueries.getDiagnosisExtended(6));
+
+	// Use Promise.all to make all the async calls concurrently and wait for them to finish.
 	await Promise.all(
 		resultExtended?.[0]?.map(async item => {
 			const resultScore = await conn.execute(
@@ -460,9 +588,10 @@ const getScoreExtend = async (scores, session, needs_extended_analysis, total) =
 			});
 			total += +resultScore[0]?.[0].t_value;
 			if (resultScore[0]?.[0].t_value == null) show_do_extended_analysis = true;
-			return { values, show_do_extended_analysis };
+			// No need to return anything from this map function.
 		})
 	);
+
 	if (show_do_extended_analysis) {
 		scores.push({
 			scoreName: 'Detailauswertung',
@@ -470,12 +599,13 @@ const getScoreExtend = async (scores, session, needs_extended_analysis, total) =
 			label: needs_extended_analysis ? 'label_do_extended_analysis' : 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis
 				? {
-						tabSelected: 1,
-						label: 'btn_go_to_data'
-				  }
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
 				: null
 		});
 	} else {
+		// Use await to calculate the error distribution and set the 'values' property.
 		values = await calculateErrorDistribution(values, 'score', total, 'error_distribution');
 		scores.push({
 			scoreName: 'Detailauswertung',
@@ -484,9 +614,11 @@ const getScoreExtend = async (scores, session, needs_extended_analysis, total) =
 			values: values
 		});
 	}
+
 	conn.release();
 	return scores;
 };
+
 const getScoreForTest9 = async (
 	scores,
 	session,
@@ -563,9 +695,9 @@ const getScoreForTest9 = async (
 				: 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis_akkusativ
 				? {
-						tabSelected: 1,
-						label: 'btn_go_to_data'
-				  }
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
 				: null
 		};
 		scores[foundIndexD] = {
@@ -576,9 +708,9 @@ const getScoreForTest9 = async (
 				: 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis_dativ
 				? {
-						tabSelected: 1,
-						label: 'btn_go_to_data'
-				  }
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
 				: null
 		};
 	} else {
@@ -599,41 +731,54 @@ const getScoreForTest9 = async (
 	return scores;
 };
 const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_grammar_analysis) => {
+	// establish database connection
 	const conn = await connection.connection();
+
+	// add ratio value to 'Situationsbilder beschreiben' score
 	scores[scores.findIndex(x => x.scoreName == 'Situationsbilder beschreiben')].values.push({
 		name: 'Ausl. obl. Konst. - Ausl. Funktionswort',
 		raw_value: ratio
 	});
+
+	// add 'Detaillierte Auswertung' score
 	scores.push({
 		scoreName: 'Detaillierte Auswertung',
 		type: 'text',
 		visible: hide_questions ? 'no' : 'yes',
 		label: 'label_do_answer_questions'
 	});
+
+	// add 'Fragen' score
 	scores.push({
 		scoreName: 'Fragen',
 		type: 'questions',
 		visible: hide_questions ? 'no' : 'yes',
 		values: []
 	});
+
+	// get content analysis questions from the database and add them to the 'Fragen' score
 	const contentResult = await conn.execute(SQL.evaluationsQueries.getContentAnalysisQuestions(5, session));
-	contentResult?.[0]?.map(async item => {
+	contentResult?.[0]?.forEach(async item => {
 		if (item.answer && item.answer == 'correct') needs_grammar_analysis = true;
 		scores[scores.findIndex(x => x.scoreName == 'Fragen')].values.push(item);
 	});
 
+	// add 'Antworten' score
 	scores.push({
 		scoreName: 'Antworten',
 		type: 'answers',
 		visible: hide_questions ? 'no' : 'yes',
 		values: []
 	});
+
+	// get extended answers from the database and add them to the 'Antworten' score
 	let resultExtend = await conn.execute(SQL.evaluationsQueries.getExtendedAnswers(session));
-	resultExtend?.[0]?.map(async item => {
+	resultExtend?.[0]?.forEach(async item => {
 		item.additional = JSON.parse('[' + item.additional + ']');
 		scores[scores.findIndex(x => x.scoreName == 'Antworten')].values.push(item);
 	});
 
+	// add recommendation for detailed grammar analysis if necessary
 	href = `/account/analysis/results/grammar?id=5&child=48&session=${session}`;
 	scores.push({
 		scoreName: 'Empfehlung zur detaillierten Grammatikanalyse',
@@ -645,6 +790,8 @@ const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_gr
 			label: 'btn_go_to_grammar'
 		}
 	});
+
+	// add message for no need for grammar analysis if necessary
 	scores.push({
 		scoreName: 'Keine Scoreermittlung notwendig',
 		type: 'message',
@@ -655,33 +802,60 @@ const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_gr
 			label: 'btn_go_to_grammar'
 		}
 	});
+
+	// release database connection
 	conn.release();
+
+	// return scores array
 	return scores;
 };
+
+// calculate error distribution for each value in the array based on the total
+// number of errors and the provided property that represents the error count
 const calculateErrorDistribution = (values, property, total, errorType) => {
-	values = values.map(value => {
-		const percent = total != 0 ? Math.round((value[property] / total) * 100) : 0;
-		value[errorType] = percent + '%';
-		if (property == 'count_incorrect') delete value.count_incorrect;
+	return values.map(value => {
+		const percent = total !== 0 ? Math.round((value[property] / total) * 100) : 0;
+		value[errorType] = `${percent}%`;
+		// remove the 'count_incorrect' property to clean up the output
+		if (property === 'count_incorrect') delete value.count_incorrect;
 		return value;
 	});
-	return values;
 };
+
+// helper function to get the tvalue from a score object
 const getTvalue = score => (score.tvalue ? score.tvalue : 0);
+
+// helper function to get the visible property from a score object
 const getScoreVisible = score => (score.visible ? score.visible : 'yes');
-const getRawValue = (raw_values, name) => raw_values.find(item => item.name === name)?.value;
+
+// helper function to get the value from an array of raw values based on its name property
+const getRawValue = (raw_values, name) => {
+	const item = raw_values.find(item => item.name === name);
+	return item ? item.value : null;
+};
+
+// helper function to check if a grammar analysis is needed based on the score and age of the child
 const checkNeedGrammarAnalyses = (score, score_name, childAgeInMonths) => {
 	return (score?.interpretation < 0 && score_name.indexOf('Score') === -1) || childAgeInMonths < 36;
 };
+
 const setDiagnosticResultDetail = async body => {
 	let results;
 	const conn = await connection.connection();
+
+	// Destructure the input parameters
 	const { session, diagnosticId, diagnosticContent, answer, answerId } = body;
+
+	// Check if session, diagnosticId and diagnosticContent are defined
 	if (session && diagnosticId && diagnosticContent) {
+		// Get the diagnostic result detail using diagnosticId, diagnosticContent and session as parameters
 		let result = await conn.execute(
 			SQL.evaluationsQueries.getDiagnosticResultDetail(diagnosticId, diagnosticContent, session)
 		);
+
+		// Check if answer and answerId are defined
 		if (answer && answerId) {
+			// If result is found, edit the diagnostic result detail using the same parameters as setDiagnosticResultDetail
 			if (result[0].length > 0) {
 				results = await conn.execute(
 					SQL.evaluationsQueries.editDiagnosticResultDetail(
@@ -692,7 +866,9 @@ const setDiagnosticResultDetail = async body => {
 						session
 					)
 				);
-			} else {
+			}
+			// If result is not found, set a new diagnostic result detail using the same parameters as setDiagnosticResultDetail
+			else {
 				results = await conn.execute(
 					SQL.evaluationsQueries.setDiagnosticResultDetail(
 						diagnosticId,
@@ -708,24 +884,44 @@ const setDiagnosticResultDetail = async body => {
 	conn.release();
 	return results;
 };
+
 const getArticulationTypes = async () => {
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.evaluationsQueries.getArticulationType);
-	conn.release();
-	return data[0];
+	try {
+		const conn = await connection.connection();
+		const data = await conn.execute(SQL.evaluationsQueries.getArticulationType);
+		conn.release();
+		return data[0];
+	} catch (err) {
+		console.error(`Error in getArticulationTypes: ${err}`);
+		throw err;
+	}
 };
+
 const getLexiconErrorTypes = async () => {
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.evaluationsQueries.getLexiconErrorType);
-	conn.release();
-	return data[0];
+	try {
+		const conn = await connection.connection();
+		const data = await conn.execute(SQL.evaluationsQueries.getLexiconErrorType);
+		conn.release();
+		return data[0];
+	} catch (err) {
+		console.error(`Error in getLexiconErrorTypes: ${err}`);
+		throw err;
+	}
 };
+
 const getDiagnosisContentGrammars = async body => {
-	const conn = await connection.connection();
-	let sql = SQL.diagnosticsQueries.getDiagnosisGrammar(body.childAgeInMonths);
-	if (body.session) sql = SQL.diagnosticsQueries.getDiagnosisGrammarWitSession(body.session, body.childAgeInMonths);
-	const data = await conn.execute(sql);
-	if (data?.[0].length > 0) {
+	try {
+		const conn = await connection.connection();
+		let sql = SQL.diagnosticsQueries.getDiagnosisGrammar(body.childAgeInMonths);
+
+		// Conditionally add session to the SQL query
+		if (body.session) {
+			sql = SQL.diagnosticsQueries.getDiagnosisGrammarWitSession(body.session, body.childAgeInMonths);
+		}
+
+		const data = await conn.execute(sql);
+
+		// Initialize variables for scores
 		let items = [];
 		let scores = {
 			total: {},
@@ -738,6 +934,8 @@ const getDiagnosisContentGrammars = async body => {
 			group_a_score_total = 0,
 			group_b_score_total = 0;
 		let last_group_name = '';
+
+		// Loop through data and calculate scores
 		data?.[0].map((item, index) => {
 			let selected = item.selected_answers ? item.selected_answers.split(',').length : 0;
 			if (last_group_name != item.group_name) {
@@ -770,6 +968,8 @@ const getDiagnosisContentGrammars = async body => {
 			}
 			items.push(item);
 		});
+
+		// Add last group scores to scores object
 		scores.groups.push({
 			name: last_group_name,
 			a: group_a_score,
@@ -777,17 +977,29 @@ const getDiagnosisContentGrammars = async body => {
 			a_total: group_a_score_total,
 			b_total: group_b_score_total
 		});
+
+		// Add total scores to scores object
 		scores.total.a = a_score;
 		scores.total.b = b_score;
+
+		conn.release();
 		return { scores, items };
+	} catch (err) {
+		// Handle errors
+		console.error(err);
+		throw err;
 	}
 };
+
+// Fetches segments for consonants from the database
 const getSegmentsForConsonants = async () => {
 	const conn = await connection.connection();
 	let data = await conn.execute(SQL.evaluationsQueries.getSegment);
 	conn.release();
 	return data[0];
 };
+
+// Fetches segments for vowels from the database and formats the result
 const getSegmentsForVowels = async () => {
 	const conn = await connection.connection();
 	let data = await conn.execute(SQL.evaluationsQueries.getVowels);
@@ -799,54 +1011,90 @@ const getSegmentsForVowels = async () => {
 	conn.release();
 	return result;
 };
+
 const getWordPhonetic = async (score_append_text, id, session, answerId) => {
+	// Establish database connection
 	const conn = await connection.connection();
+
+	// Initialize empty array for word phonetic data
 	let word_phonetic = [];
+
+	// Get diagnosis content result details from the database
 	const data = await conn.execute(SQL.diagnosticsQueries.getDiagnosisContentResultDetails(id, session, answerId));
+
+	// Push the name and index of each item in data to the word phonetic array
 	data?.[0]?.forEach((item, index) => {
 		word_phonetic.push({ name: index + 1, value: item.name });
+
+		// Add the item name to score_append_text if answerId is 'answer_08'
 		if (answerId == 'answer_08') score_append_text += item.name + ', ';
 	});
+
+	// Remove the last comma and add a period to the end of score_append_text
 	score_append_text = score_append_text.slice(0, -1) + '.';
+
+	// Release the database connection
 	conn.release();
+
+	// Return an object with score_append_text, word_phonetic, and data
 	return { score_append_text: score_append_text, word_phonetic: word_phonetic, data: data[0] };
 };
+
 const getLexiconErrorType = async (session, id, answerId, tagName, errorTypeTag) => {
-	const conn = await connection.connection();
 	let lexicon = [];
-	const dataError = await conn.execute(
-		SQL.evaluationsQueries.getLexiconErrorTypeByTagName(session, id, answerId, tagName, errorTypeTag)
-	);
-	dataError?.[0]?.forEach(item => {
-		lexicon.push({
-			name: item.name,
-			count: item.count,
-			total: item.total
+	try {
+		const conn = await connection.connection();
+		// Use template literals to avoid concatenation errors and improve readability
+		const dataError = await conn.execute(
+			SQL.evaluationsQueries.getLexiconErrorTypeByTagName(session, id, answerId, tagName, errorTypeTag)
+		);
+		dataError?.[0]?.forEach(item => {
+			lexicon.push({
+				name: item.name,
+				count: item.count,
+				total: item.total
+			});
 		});
-	});
-	lexicon.forEach(lexic => {
-		let percent = lexic.total != 0 ? Math.round((lexic.count / lexic.total) * 100) : 0;
-		lexic.count_related = lexic.count + '/' + lexic.total;
-		lexic.error_distribution = percent + '%';
-		delete lexic.count;
-		delete lexic.total;
-	});
-	conn.release();
+		lexicon.forEach(lexic => {
+			let percent = lexic.total != 0 ? Math.round((lexic.count / lexic.total) * 100) : 0;
+			// Modify properties to use more descriptive names and simplify code later
+			lexic.count_related = `${lexic.count}/${lexic.total}`;
+			lexic.error_distribution = `${percent}%`;
+			delete lexic.count;
+			delete lexic.total;
+		});
+		conn.release();
+	} catch (err) {
+		console.error(err);
+	}
 	return lexicon;
 };
+
 const getTruncation = async (session, childAgeInMonths) => {
+	// Declare an empty array for truncations
 	let truncations = [];
+
+	// Connect to the database
 	const conn = await connection.connection();
+
+	// Execute SQL query to get target items having phonetic structure
 	const dataTarget = await conn.execute(
 		SQL.evaluationsQueries.getTargetItemHavingPhonetic(session, childAgeInMonths)
 	);
+
+	// Loop through the target items returned from the query
 	dataTarget?.[0]?.forEach(item => {
 		let key = item.phonetic_structure;
+
+		// Clean up the HTML of the target item
 		let target = '<p class="word clearfix">' + item.target_item_html + '</p>';
 		target = target.replace('\n', '');
 		target = target.replace('"', '"');
 		target = target.replace('  ', '');
 		target = target.replace('> <', '><');
+
+		// If the answer is not null, clean up the HTML of the answer
+		let realized_as;
 		if (item.answer_04 == null) {
 			realized_as = target;
 		} else {
@@ -855,27 +1103,49 @@ const getTruncation = async (session, childAgeInMonths) => {
 			realized_as = realized_as.replace('"', '"');
 			realized_as = realized_as.replace('  ', '');
 		}
+
+		// Find the index of the current key in the truncations array
 		let foundIndex = truncations.findIndex(x => x.name == key);
+
+		// If the key already exists in the truncations array, add the target and realized_as to its corresponding item
 		if (truncations[foundIndex]) {
 			truncations[foundIndex].target += target;
 			truncations[foundIndex].realized_as += realized_as;
-		} else
+		}
+		// If the key does not exist in the truncations array, add a new item for it
+		else {
 			truncations.push({
 				name: key,
 				target: target,
 				realized_as: realized_as
 			});
+		}
 	});
+
+	// Release the database connection
 	conn.release();
+
+	// Return the truncations array
 	return truncations;
 };
+
 const getPhoneticContentData = async (session, childAgeInMonths, tagName = '') => {
 	const conn = await connection.connection();
 	let sql = SQL.evaluationsQueries.getTargetItem(session, childAgeInMonths);
-	if (tagName === 'articulation') sql = SQL.evaluationsQueries.getAnswer_04(session);
-	else if (tagName !== '') sql = SQL.evaluationsQueries.getTargetItemByTag(session, childAgeInMonths, tagName);
+
+	// Change SQL query based on tag name parameter
+	if (tagName === 'articulation') {
+		sql = SQL.evaluationsQueries.getAnswer_04(session);
+	} else if (tagName !== '') {
+		sql = SQL.evaluationsQueries.getTargetItemByTag(session, childAgeInMonths, tagName);
+	}
+
+	// Retrieve target items from the database
 	const dataTargetHtml = await conn.execute(sql);
+
 	let phonetic_contents_data = [];
+
+	// Loop through target items and parse JSON data, if applicable
 	dataTargetHtml?.[0]?.forEach(item => {
 		if (item.answer_04 != null) {
 			if (item.answer_04.indexOf('data-json') !== -1) {
@@ -886,15 +1156,20 @@ const getPhoneticContentData = async (session, childAgeInMonths, tagName = '') =
 				}
 			}
 		}
+
+		// Modify phonetic structure and segment properties for certain tag names
 		if (tagName !== '' && tagName !== 'articulation') {
 			item.phonetic_structure = item.phonetic_structure.replace(', ', ',');
 			item.segment = item.phonetic_structure.split(',');
 		}
+
 		phonetic_contents_data.push(item);
 	});
+
 	conn.release();
 	return phonetic_contents_data;
 };
+
 const getSyllablesStructure = async (phonetic_contents_data, totalValue) => {
 	let count_initial_consonant_removed = 0,
 		count_initial_consonant_total = 0,
@@ -1147,24 +1422,40 @@ const getConsonantStructures = async phonetic_contents_data => {
 	];
 };
 const getContextProcesses = async (session, total_for_processes) => {
+	// Establish a database connection
 	const conn = await connection.connection();
+
+	// Initialize an empty array for context processes
 	let context_processes = [];
+
+	// Get the extended diagnosis question data for the session
 	const dataExtendQuestion = await conn.execute(
 		SQL.diagnosticsQueries.getDiagnosisExtendedQuestion(session, '02', 'answer_05', 'answer_06', 'answer_07')
 	);
+
+	// Map the question data to the context process array
 	dataExtendQuestion?.[0]?.forEach(item => {
 		context_processes.push({
 			questionId: item.question_id,
-			score: (item.score != '' ? item.score : '0') + '/' + total_for_processes
+			score: (item.score !== '' && item.score!==null ? item.score : '0') + '/' + total_for_processes
 		});
 	});
+
+	// Release the database connection
 	conn.release();
+
+	// Return the context process array
 	return context_processes;
 };
 async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
-	let substitution_processes = [],
-		sound_preferences = [];
+	// Initialize arrays for substitution processes and sound preferences
+	let substitution_processes = [];
+	let sound_preferences = [];
+
+	// Get the articulation types
 	let articulation_types = await getArticulationTypes();
+
+	// Map the articulation types to the substitution process array
 	articulation_types.map(articulation_type => {
 		substitution_processes.push({
 			name: articulation_type.name,
@@ -1172,16 +1463,22 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 			count: 0
 		});
 	});
+
+	// Loop through the phonetic content data
 	phonetic_contents_data.map(phoneticContent => {
 		if (phoneticContent.json?.replacements) {
+			// Loop through the replacements in the phonetic content
 			phoneticContent.json.replacements.map(replacement => {
+				// Check if the replacement segment contains 'initial', 'medial', or 'final'
 				if (
 					replacement.segment.indexOf('initial') !== -1 ||
 					replacement.segment.indexOf('medial') !== -1 ||
 					replacement.segment.indexOf('final') !== -1
 				) {
+					// Find the index of the sound preference with the same name as the original sound
 					let foundIndex = sound_preferences.findIndex(x => x.name == replacement.original);
 
+					// If the sound preference does not exist, create it
 					if (foundIndex == -1) {
 						sound_preferences.push({
 							name: replacement.original,
@@ -1191,7 +1488,8 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 							total: 0
 						});
 					} else {
-						Object.entries(sound_preferences[foundIndex]).map(([k, v]) => {
+						// Update the sound preference with the replacement information
+						Object.entries(sound_preferences[foundIndex]).forEach(([k, v]) => {
 							if (
 								replacement.segment.indexOf(k) == -1 &&
 								replacement.replaced.indexOf(v) == -1 &&
@@ -1203,13 +1501,21 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 						});
 					}
 				}
+
+				// Check if the replacement is selected
 				if (replacement.selected) {
+					// Split the selected types by comma
 					let selected_types = replacement.selected.split(',');
+
+					// Loop through the selected types
 					selected_types.map(type_id => {
+						// Find the index of the articulation type with the same ID as the selected type
 						let foundIndex = articulation_types.findIndex(x => x.id == type_id);
 						let index = substitution_processes.findIndex(
 							x => x.name == articulation_types[foundIndex].name
 						);
+
+						// Update the substitution process with the replacement information
 						let affects = substitution_processes[index].affects;
 						substitution_processes[index].affects =
 							affects + (affects == '' ? '' : ', ') + replacement.original;
@@ -1221,35 +1527,52 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 		}
 	});
 
-	sound_preferences.map(sound_preference => {
+	// Remove sound preferences with a total count of less than 2 and nullify the total count of the rest
+	sound_preferences.forEach(sound_preference => {
 		if (sound_preference.total < 2) {
 			sound_preference = null;
 		} else {
 			sound_preference.total = null;
 		}
 	});
+
+	// Return the substitution processes and sound preferences
 	return { substitution_processes, sound_preferences };
 }
+
 async function getSubstitutions(phonetic_contents, segments, type) {
-	let substitutions = [],
-		substitution_groups = [];
+	// Initialize arrays for substitutions and substitution groups
+	let substitutions = [];
+	let substitution_groups = [];
+
+	// Set the class name to 'even'
 	let className = 'even';
+
+	// Get the articulation types
 	const articulation_types = await getArticulationTypes();
+
+	// Loop through the segments
 	segments.map(segment => {
-		let realized_as = '',
-			testcase = '',
-			processData = '',
-			constancy_consequence = '';
-		let has_all_replaced = true,
-			has_replacement = false,
-			has_target_item = false;
+		// Initialize variables
+		let realized_as = '';
+		let testcase = '';
+		let processData = '';
+		let constancy_consequence = '';
+		let has_all_replaced = true;
+		let has_replacement = false;
+		let has_target_item = false;
 		let replaced_letters = [];
+
+		// Loop through the phonetic contents
 		phonetic_contents.map(phonetic_content => {
 			if (phonetic_content.segment) {
+				// Loop through the segments in the phonetic content
 				phonetic_content.segment.map(phonetic_segment => {
 					if (phonetic_segment == segment.name) {
 						has_target_item = true;
 						has_replacement = false;
+
+						// Loop through the replacements in the phonetic content
 						if (phonetic_content.json?.replacements) {
 							phonetic_content.json.replacements.map(replacement => {
 								if (replacement.segment == segment.name) {
@@ -1269,6 +1592,8 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 								}
 							});
 						}
+
+						// Add the realized_as and testcase to the variables
 						if (has_replacement) {
 							realized_as += `<p>${segment.letters}</p>`;
 							has_all_replaced = false;
@@ -1281,7 +1606,11 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 
 		if (has_target_item) {
 			processData = processData.replace('"', '"');
+
+			// Find the index of the substitution group with the same name as the segment letters
 			let index = substitution_groups.findIndex(x => x.name == segment.letters);
+
+			// If the substitution group does not exist, create it
 			if (index == -1) {
 				substitution_groups.push({
 					name: segment.letters,
@@ -1292,6 +1621,7 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 					consequence: false
 				});
 			} else {
+				// Add the substitution to the substitution group
 				substitution_groups[index]?.substitutions.push({
 					name: segment.name,
 					has_replacement: replaced_letters.length > 0 ? true : false,
@@ -1303,9 +1633,12 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 			}
 		}
 	});
-	substitution_groups.map(v => {
-		let count_all_correct = 0,
-			count_all_replaced = 0;
+
+	// Loop through the substitution groups
+	substitution_groups.forEach(v => {
+		let count_all_correct = 0;
+		let count_all_replaced = 0;
+		// Loop through the substitutions in the substitution group
 		v.substitutions.map(value => {
 			if (value.has_all_correct) {
 				count_all_correct++;
@@ -1322,6 +1655,8 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 				});
 			}
 		});
+
+		// Set the constancy property of the substitution group
 		if (count_all_replaced == v.substitutions.length || count_all_correct == v.substitutions.length) {
 			v.constancy = true;
 		}
@@ -1330,8 +1665,12 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 			v.constancy = true;
 		}
 	});
-	substitution_groups.map(group => {
+
+	// Loop through the substitution groups
+	substitution_groups.forEach(group => {
 		if (group.has_remplacements) className = className == 'even' ? 'ood' : 'even';
+
+		// Loop through the substitutions in the substitution group
 		group.substitutions.map((v, index) => {
 			if (index == 0)
 				v.columns[3] =
@@ -1346,6 +1685,8 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 			if (type == 'vowels') {
 				delete v.columns[2];
 			}
+
+			// Add the substitution to the substitutions array
 			return substitutions.push({
 				name: v.name,
 				columns: v.columns,
@@ -1354,18 +1695,30 @@ async function getSubstitutions(phonetic_contents, segments, type) {
 		});
 	});
 
+	// Return the substitutions
 	return substitutions;
 }
+
+// Refactored function: getScoreForTest2
 async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, needs_extended_analysis) {
+	// Initialize variables
 	let score_append_text = '<br/>';
 	let count_syllables_stressed = 0,
 		count_syllables = 0,
 		count_syllables_removed_stressed = 0,
 		count_syllables_removed_unstressed = 0;
+
+	// Establish database connection
 	const conn = await connection.connection();
+
+	// Fetch and update phonetic deformity results
 	let result_phonetic_deformity = await getWordPhonetic(score_append_text, '02', session, 'answer_08');
 	score_append_text = result_phonetic_deformity.score_append_text;
+
+	// Fetch and store accentuation change results
 	let result_accentuation_change = await getWordPhonetic(score_append_text, '02', session, 'answer_09');
+
+	// Push phonetic deformity results to scores
 	scores.push({
 		scoreName: 'Phonetik',
 		type: 'message',
@@ -1373,6 +1726,8 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 		label: 'label_phonetic_deformity',
 		append_text: score_append_text
 	});
+
+	// Push extended analysis recommendation to scores
 	scores.push({
 		scoreName: 'Empfehlung zur Detailauswertung',
 		type: 'message',
@@ -1382,13 +1737,19 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 			: 'label_no_need_for_extended_analysis_phonetic',
 		class: needs_extended_analysis ? 'alert' : 'success'
 	});
+
+	// Fetch not evaluable results
 	let result_not_evaluable = await getWordPhonetic(score_append_text, '02', session, 'answer_11');
 	let total_for_processes = totalValue - result_not_evaluable.data.length;
+
+	// Check if diagnostic extension exists
 	let questionIds = await conn.execute(SQL.diagnosticsQueries.getDiagnosticExtendsIds(2, session, childAgeInMonths));
 	let hasDiagnosticExtension = false;
 	if (questionIds?.[0]?.[0]?.answer_ids && questionIds?.[0]?.[0]?.answer_ids.length > 0) {
 		hasDiagnosticExtension = true;
 	}
+
+	// Fetch phonetic contents
 	let phonetic_contents = await conn.execute(
 		SQL.diagnosticsQueries.getDiagnosisContent(
 			2,
@@ -1398,6 +1759,8 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 			hasDiagnosticExtension
 		)
 	);
+
+	// Count diagnostic content attributes
 	let count_diagnostic_contents = phonetic_contents[0].length;
 	phonetic_contents[0].forEach(item => {
 		let html = item.target_item_html;
@@ -1411,10 +1774,14 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 		const matches = html.match(/syllable/g);
 		if (matches != null) count_syllables += matches.length;
 	});
+
+	// Fetch data sum
 	const dataSum = await conn.execute(
 		SQL.evaluationsQueries.getDiagnosisResultDetails(session, '02', 'answer_09', 'incorrect')
 	);
 	count_accentuation = +dataSum[0][0]?.count_accentuation;
+
+	// Fetch various phonetic content data
 	let phonetic_content = await getPhoneticContentData(session, childAgeInMonths);
 	let phonetic_contents_segment = await getPhoneticContentData(session, childAgeInMonths, 'Segment');
 	let segments = await getSegmentsForConsonants();
@@ -1422,6 +1789,8 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 	let segmentsvowels = await getSegmentsForVowels();
 	let phonetic_contents_Articulation = await getPhoneticContentData(session, childAgeInMonths, 'articulation');
 	let resultPhoneticProcesses = await GetSubstituionsAndSoundPreference(phonetic_contents_Articulation);
+
+	// Push results to scores
 	scores.push({
 		scoreName: 'Ergebnisübersicht',
 		type: 'accordion',
@@ -1462,15 +1831,15 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 				values: await getSyllablesStructure(phonetic_content, totalValue)
 			},
 			'Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)':
-				{
-					head: ['label_error_type', 'label_amount_possibilities', 'label_affected'],
-					values: await getConsonantStructures(phonetic_content)
-				},
+			{
+				head: ['label_error_type', 'label_amount_possibilities', 'label_affected'],
+				values: await getConsonantStructures(phonetic_content)
+			},
 			'Aussprache: Analyse der Substitutionsprozesse bei Konsonanten': {
 				head: [
 					'label_segment',
 					'label_realized_as',
-					'label_testcase',
+					'label_test      case',
 					'label_process',
 					'label_constancy_consequence'
 				],
@@ -1503,9 +1872,13 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 		}
 	});
 
+	// Release connection
 	conn.release();
+
+	// Return scores
 	return scores;
 }
+
 module.exports = {
 	getAnalyses,
 	setAnalysesResult,

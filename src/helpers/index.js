@@ -1,4 +1,5 @@
 module.exports = {
 	isEmpty: require('./isEmpty'),
-	properties: require('./properties')
+	properties: require('./properties'),
+	formatAccordionData: require('./accordionFormatter')
 };

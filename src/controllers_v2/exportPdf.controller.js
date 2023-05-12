@@ -1,7 +1,7 @@
 const { childService } = require('../services');
 const exportPdfService = require('../services/exportPdf.service');
 
-const getEvaluationTestsByChild = async function (req, res) {
+const getEvaluationTestsByChild = async (req, res) => {
 	try {
 		const result_analysis = await exportPdfService.getEvaluationTestsByChild(req.query);
 		const child = await childService.getChildById(req.query.childId);
