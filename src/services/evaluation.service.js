@@ -42,7 +42,18 @@ const setAnalysesResult = async body => {
 				let data = {};
 				switch (score.type) {
 					case 'values':
-						data = { values: score.values, interpretation: score.interpretation };
+						let result = {}
+						switch (score.scoreName) {
+                            case 'MLU':
+							case 'Vollständigkeit':
+							case 'Score A':
+							case 'Score B':
+							    result = { values: score.values, decimals: score.decimals, interpretation: score.interpretation };
+							    break;
+							default: 
+							    result = { values: score.values, interpretation: score.interpretation };
+						}
+						data = result;
 						break;
 					case 'table':
 						data = { head: score.head, values: score.values };
@@ -51,14 +62,16 @@ const setAnalysesResult = async body => {
 						data = { label: score.label, link: score.link };
 						break;
 					case 'compact_values':
+					case 'questions':
+					case 'answers':
 						data = { values: score.values };
 						break;
 					case 'accordion':
 						data = { accordion: formatAccordionData(score.accordion) };
 						break;
 					case 'text':
-					case 'questions':
-					case 'answers':
+						data = { label: score.label };
+						break;
 					default:
 						data = score.values;
 				}
@@ -252,12 +265,12 @@ const getAnalysesValue = async (
 					break;
 				}
 				case 'Score A': {
-					let grammars = await getDiagnosisContentGrammars(body);
+					let grammars = await getDiagnosisContentGrammars({session: body.session, childAgeInMonths: childAgeInMonths});
 					raw_value = grammars?.scores?.total.a;
 					break;
 				}
 				case 'Score B ': {
-					let grammars = await getDiagnosisContentGrammars(body);
+					let grammars = await getDiagnosisContentGrammars({session: body.session, childAgeInMonths: childAgeInMonths});
 					raw_value = grammars?.scores?.total.b;
 					break;
 				}

@@ -13,7 +13,7 @@ const formatAccordionData = data => {
 
 	let phonetic_wordstructure_stressed = data['Aussprache: Veränderung der Wortstruktur und Wortbetonung'];
 	phonetic_wordstructure_stressed.head = data['Aussprache: Veränderung der Wortstruktur und Wortbetonung'].head;
-	phonetic_wordstructure_stressed.values = dataValue(data['Aussprache: Veränderung der Wortstruktur und Wortbetonung'].values, "name");
+	phonetic_wordstructure_stressed.values = dataValue(data['Aussprache: Veränderung der Wortstruktur und Wortbetonung'].values);
 
 	let phonetic_truncations = data['Aussprache: Trunkierung von Mehrsilbern durch Silbenauslassung'];
 	phonetic_truncations.head = data['Aussprache: Trunkierung von Mehrsilbern durch Silbenauslassung'].head;
@@ -22,11 +22,11 @@ const formatAccordionData = data => {
 
 	let phonetic_syllable_structures = data['Aussprache: Silbenstrukturprozesse'];
 	phonetic_syllable_structures.head = data['Aussprache: Silbenstrukturprozesse'].head;
-	phonetic_syllable_structures.values = dataValue(data['Aussprache: Silbenstrukturprozesse'].values, "name");
+	phonetic_syllable_structures.values = dataValue(data['Aussprache: Silbenstrukturprozesse'].values);
 
 	let phonetic_consonant_structures = data['Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)'];
 	phonetic_consonant_structures.head = data['Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)'].head;
-	phonetic_consonant_structures.values = dataValue(data['Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)'].values, "name");
+	phonetic_consonant_structures.values = dataValue(data['Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)'].values);
 
 	let phonetic_substitutions_consonants = data['Aussprache: Analyse der Substitutionsprozesse bei Konsonanten'];
 	phonetic_substitutions_consonants.head = data['Aussprache: Analyse der Substitutionsprozesse bei Konsonanten'].head;
@@ -39,11 +39,11 @@ const formatAccordionData = data => {
 
 	let phonetic_substitution_processes = data['Aussprache: Übersicht über Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen'];
 	phonetic_substitution_processes.head = data['Aussprache: Übersicht über Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen'].head;
-	phonetic_substitution_processes.values = dataValue(data['Aussprache: Übersicht über Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen'].values, "name");
+	phonetic_substitution_processes.values = dataValue(data['Aussprache: Übersicht über Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen'].values);
 
 	let phonetic_sound_preference = data['Aussprache: Lautpräferenz und funktionale Belastung'];
 	phonetic_sound_preference.head = data['Aussprache: Lautpräferenz und funktionale Belastung'].head;
-	phonetic_sound_preference.values = dataValue(data['Aussprache: Lautpräferenz und funktionale Belastung'].values, "name");
+	phonetic_sound_preference.values = dataValue(data['Aussprache: Lautpräferenz und funktionale Belastung'].values);
 
 	let phonetic_deformity = data['Aussprache: Phonetische Realisierung / Fehlbildungen'];
 	phonetic_deformity.head = data['Aussprache: Phonetische Realisierung / Fehlbildungen'].head;

@@ -231,6 +231,22 @@ module.exports = {
 			response[0] = additionalResult;
 		}
 
+		// Check if the diagnostic has ID 10, which requires additional processing
+		if(id==10){
+			let additionalResult = await Promise.all(
+				response[0].map(async content => {
+					// Query all additional question data including extended question for evaluation
+					let data = await conn.execute(
+						SQL.diagnosticsQueries.getDiagnosisExtendedQuestionContent(session, content?.id)
+					);	
+						return {
+							...content,
+							extraContent: [...data[0]]
+						};
+				})
+			);
+			response[0] = additionalResult;
+		}
 		// Release the connection to the database
 		conn.release();
 
@@ -254,13 +270,34 @@ module.exports = {
 			}
 			// If extra content is provided, update or set a new extras question result
 			else if (body.extraContent) {
+				// for diagnostic 5 when adding extended answer progress bar should change 
+				if (body.result) {
+					// Check if the diagnostic result already exists
+					let check = await conn.execute(
+						SQL.diagnosticsQueries
+							.DiagnosticResultQueries(body.session, content, body.result)
+							.checkForExistingItem()
+					);
+
+					// If it does, update the result
+					if (check[0].length > 0) {
+						data = await conn.execute(
+							SQL.diagnosticsQueries.DiagnosticResultQueries(body.session, content, body.result).update()
+						);
+					}
+					// Otherwise, set a new result
+					else {
+						data = await conn.execute(
+							SQL.diagnosticsQueries.DiagnosticResultQueries(body.session, content, body.result).setNewOne()
+						);
+					}
+				}
 				// Check if the extras question result already exists
 				let check = await conn.execute(
 					SQL.diagnosticsQueries
 						.DiagnosticExtrasQuestionResultQueries(
 							body.session,
 							content,
-							body.extraContent,
 							body.extraContent
 						)
 						.checkForExistingItem()
@@ -273,12 +310,12 @@ module.exports = {
 							.DiagnosticExtrasQuestionResultQueries(
 								body.session,
 								content,
-								body.extraContent,
 								body.extraContent
 							)
 							.update()
 					);
 				}
+				
 				// Otherwise, set a new result
 				else {
 					data = await conn.execute(
@@ -286,7 +323,6 @@ module.exports = {
 							.DiagnosticExtrasQuestionResultQueries(
 								body.session,
 								content,
-								body.extraContent,
 								body.extraContent
 							)
 							.setNewOne()
@@ -428,11 +464,21 @@ module.exports = {
 				// Loop through the analysis result scores and insert them into the database
 				for (const score of scores) {
 					let data = {};
-
 					// Prepare the data for insertion based on the score type
 					switch (score.type) {
 						case 'values':
-							data = { values: score.values, interpretation: score.interpretation };
+							let result = {}
+							switch (score.scoreName) {
+								case 'MLU':
+								case 'Vollständigkeit':
+								case 'Score A':
+								case 'Score B':
+									result = { values: score.values, decimals: score.decimals, interpretation: score.interpretation };
+									break;
+								default: 
+								    result = { values: score.values, interpretation: score.interpretation };
+							}
+							data = result;
 							break;
 						case 'table':
 							data = { head: score.head, values: score.values };
@@ -441,14 +487,16 @@ module.exports = {
 							data = { label: score.label, link: score.link };
 							break;
 						case 'compact_values':
+						case 'questions':
+						case 'answers':
 							data = { values: score.values };
 							break;
 						case 'accordion':
 							data = { accordion: formatAccordionData(score.accordion) };
 							break;
 						case 'text':
-						case 'questions':
-						case 'answers':
+							data = { label: score.label };
+							break;
 						default:
 							data = score.values;
 					}
