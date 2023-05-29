@@ -230,9 +230,8 @@ module.exports = {
 
 			response[0] = additionalResult;
 		}
-
-		// Check if the diagnostic has ID 10, which requires additional processing
-		if(id==10){
+		// Check if the diagnostic has ID 9 or 10, which requires additional processing
+		if(id==10 || id==9){
 			let additionalResult = await Promise.all(
 				response[0].map(async content => {
 					// Query all additional question data including extended question for evaluation

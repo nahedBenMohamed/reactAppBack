@@ -27,7 +27,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // we must specify the frontend endpoint in environment file
 app.use(
 	cors({
-		origin: config?.env_variables?.FRONT_END_BASE_URL
+		origin: process.env.FRONT_END_BASE_URL
 	})
 );
 app.use(morgan('tiny'));
@@ -49,7 +49,7 @@ cron.schedule('*/5 * * * *', () => {
 
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
-	cors: { origin: config?.env_variables?.FRONT_END_BASE_URL }
+	cors: { origin: process.env.FRONT_END_BASE_URL }
 });
 
 module.exports = { app, io, http, express };

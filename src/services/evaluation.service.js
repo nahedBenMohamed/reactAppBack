@@ -42,16 +42,20 @@ const setAnalysesResult = async body => {
 				let data = {};
 				switch (score.type) {
 					case 'values':
-						let result = {}
+						let result = {};
 						switch (score.scoreName) {
-                            case 'MLU':
+							case 'MLU':
 							case 'Vollständigkeit':
 							case 'Score A':
 							case 'Score B':
-							    result = { values: score.values, decimals: score.decimals, interpretation: score.interpretation };
-							    break;
-							default: 
-							    result = { values: score.values, interpretation: score.interpretation };
+								result = {
+									values: score.values,
+									decimals: score.decimals,
+									interpretation: score.interpretation
+								};
+								break;
+							default:
+								result = { values: score.values, interpretation: score.interpretation };
 						}
 						data = result;
 						break;
@@ -265,12 +269,18 @@ const getAnalysesValue = async (
 					break;
 				}
 				case 'Score A': {
-					let grammars = await getDiagnosisContentGrammars({session: body.session, childAgeInMonths: childAgeInMonths});
+					let grammars = await getDiagnosisContentGrammars({
+						session: body.session,
+						childAgeInMonths: childAgeInMonths
+					});
 					raw_value = grammars?.scores?.total.a;
 					break;
 				}
 				case 'Score B ': {
-					let grammars = await getDiagnosisContentGrammars({session: body.session, childAgeInMonths: childAgeInMonths});
+					let grammars = await getDiagnosisContentGrammars({
+						session: body.session,
+						childAgeInMonths: childAgeInMonths
+					});
 					raw_value = grammars?.scores?.total.b;
 					break;
 				}
@@ -366,9 +376,31 @@ const getAnalysesValue = async (
 	}
 
 	conn.release();
+	if (diagnosticId == 5) {
+		const specificationsTest5 = [
+			'Detaillierte Auswertung',
+			'Fragen',
+			'Antworten',
+			'Empfehlung zur detaillierten Grammatikanalyse'
+		];
 
+		const updatedDataArray = scores.map(item => {
+			if (specificationsTest5.includes(item.scoreName)) {
+				return {
+					...item,
+					visible: 'yes'
+				};
+			} else if (item.scoreName == 'Keine Scoreermittlung notwendig') {
+				return { ...item, visible: 'no' };
+			} else {
+				return item;
+			}
+		});
+		return updatedDataArray;
+	}
 	return scores;
 };
+
 const getRawValueByTagName = async (session, tagName) => {
 	// Use a try-catch block to catch any errors that may occur during the execution of the code.
 	try {
@@ -535,7 +567,10 @@ const getRawValueForExtendAnswer = async (session, score_name) => {
 	if (score_name == 'MLU') {
 		// Calculate rawValue and set decimals to 1 for MLU score.
 		let rawValue = sentences > 0 ? (words / sentences).toFixed(2) : 0;
-		rawValue = rawValue.substring(0, rawValue.length - 1);
+		// Check if rawValue is truthy and a string before applying substring
+		if (rawValue && typeof rawValue === 'string') {
+			rawValue = rawValue.substring(0, rawValue.length - 1);
+		}
 		decimals = 1;
 		// Return object with rawValue, ratio, and decimals properties.
 		return { rawValue: +rawValue, ratio: ratio, decimals: decimals };
@@ -573,6 +608,7 @@ const getScoreTableByTag = async (scores, session, childAgeInMonths, diagnosticI
 	scores.push({
 		scoreName: 'Detailauswertung',
 		type: 'table',
+		visible: diagnosticId != 2 ? 'yes' : 'no',
 		head: ['label_structure', 'label_mistakes_per_items', 'label_error_distribution'],
 		// Use await to calculate the error distribution and set the 'values' property.
 		values: await calculateErrorDistribution(values, 'count_incorrect', total, 'error_distribution')
@@ -609,12 +645,13 @@ const getScoreExtend = async (scores, session, needs_extended_analysis, total) =
 		scores.push({
 			scoreName: 'Detailauswertung',
 			type: 'message',
+			visible: diagnosticId != 2 ? 'yes' : 'no',
 			label: needs_extended_analysis ? 'label_do_extended_analysis' : 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis
 				? {
-					tabSelected: 1,
-					label: 'btn_go_to_data'
-				}
+						tabSelected: 1,
+						label: 'btn_go_to_data'
+				  }
 				: null
 		});
 	} else {
@@ -708,9 +745,9 @@ const getScoreForTest9 = async (
 				: 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis_akkusativ
 				? {
-					tabSelected: 1,
-					label: 'btn_go_to_data'
-				}
+						tabSelected: 1,
+						label: 'btn_go_to_data'
+				  }
 				: null
 		};
 		scores[foundIndexD] = {
@@ -721,9 +758,9 @@ const getScoreForTest9 = async (
 				: 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis_dativ
 				? {
-					tabSelected: 1,
-					label: 'btn_go_to_data'
-				}
+						tabSelected: 1,
+						label: 'btn_go_to_data'
+				  }
 				: null
 		};
 	} else {
@@ -1450,7 +1487,7 @@ const getContextProcesses = async (session, total_for_processes) => {
 	dataExtendQuestion?.[0]?.forEach(item => {
 		context_processes.push({
 			questionId: item.question_id,
-			score: (item.score !== '' && item.score!==null ? item.score : '0') + '/' + total_for_processes
+			score: (item.score !== '' && item.score !== null ? item.score : '0') + '/' + total_for_processes
 		});
 	});
 
@@ -1844,10 +1881,10 @@ async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, n
 				values: await getSyllablesStructure(phonetic_content, totalValue)
 			},
 			'Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)':
-			{
-				head: ['label_error_type', 'label_amount_possibilities', 'label_affected'],
-				values: await getConsonantStructures(phonetic_content)
-			},
+				{
+					head: ['label_error_type', 'label_amount_possibilities', 'label_affected'],
+					values: await getConsonantStructures(phonetic_content)
+				},
 			'Aussprache: Analyse der Substitutionsprozesse bei Konsonanten': {
 				head: [
 					'label_segment',
