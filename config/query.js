@@ -521,6 +521,16 @@ module.exports = {
 			session
 		) => `SELECT diagnostic_content_analysis_questions.*, draq.answer FROM diagnostic_content_analysis_questions 
 		LEFT JOIN (SELECT * FROM diagnostic_result_analysis_question WHERE session='${session}') draq ON draq.question_id = diagnostic_content_analysis_questions.id WHERE diagnostic_content_analysis_questions.diagnostic=${diagnosticId}`,
+		getAnswersTab2Test5: session =>
+			`SELECT * FROM diagnostic_result_analysis WHERE diagnostic_result_analysis.session="${session}" AND diagnostic_result_analysis.score_name= "Fragen"`,
+		getAnswersTab2Test5: session =>
+			`SELECT * FROM diagnostic_result_analysis WHERE diagnostic_result_analysis.session="${session}" AND diagnostic_result_analysis.score_name= "Fragen"`,
+		updateAnswersTab2Test5: (session, newData) => {
+			return {
+				sql: `UPDATE diagnostic_result_analysis SET data=? WHERE session=? AND score_name='Fragen'`,
+				values: [newData, session]
+			};
+		},
 		getDiagnosticResultDetail: (diagnosticId, diagnosticContent, session) =>
 			`SELECT * FROM diagnostic_result_detail_0${diagnosticId} WHERE session='${session}' AND diagnostic_content='${diagnosticContent}'`,
 		editDiagnosticResultDetail: (

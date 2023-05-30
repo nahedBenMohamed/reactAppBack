@@ -121,33 +121,36 @@ module.exports = {
 		return response[0];
 	},
 	updateDiagnosticSession: async function (id, body, session) {
-		// Set appropriate dates if status has changed
-		if (body?.status === 'finished') {
-			Object.assign(body, { date_finished: moment().format('YYYY-MM-DD HH:mm:ss') });
-		} else if (body?.status === 'paused') {
-			Object.assign(body, { date_paused: moment().format('YYYY-MM-DD HH:mm:ss') });
-		} else if (body?.status === 'played') {
-			Object.assign(body, { date_played: moment().format('YYYY-MM-DD HH:mm:ss') });
-		} else if (body?.status === 'canceled') {
-			Object.assign(body, { date_canceled: moment().format('YYYY-MM-DD HH:mm:ss') });
-		}
-
-		// Remove old results if initializing in practice mode
-		if (body.contentIds && body?.status === 'initialized') {
-			for (const contentId of body.contentIds) {
-				await execute(SQL.diagnosticsQueries.deleteDiagnosticResult(session, contentId));
+		try {
+			if (body?.status === 'finished') {
+				Object.assign(body, { date_finished: moment().format('YYYY-MM-DD HH:mm:ss') });
+			} else if (body?.status === 'paused') {
+				Object.assign(body, { date_paused: moment().format('YYYY-MM-DD HH:mm:ss') });
+			} else if (body?.status === 'played') {
+				Object.assign(body, { date_played: moment().format('YYYY-MM-DD HH:mm:ss') });
+			} else if (body?.status === 'canceled') {
+				Object.assign(body, { date_canceled: moment().format('YYYY-MM-DD HH:mm:ss') });
 			}
-			delete body.contentIds; // Remove unused content ID from update body
+
+			// Remove old results if initializing in practice mode
+			if (body.contentIds && body?.status === 'initialized') {
+				for (const contentId of body.contentIds) {
+					await execute(SQL.diagnosticsQueries.deleteDiagnosticResult(session, contentId));
+				}
+				delete body.contentIds; // Remove unused content ID from update body
+			}
+
+			let response = await execute(SQL.diagnosticsQueries.updateSessionToken({ id, body, session }));
+
+			// Save last completed session as default
+			if (body.status && body.status == 'finished') {
+				this.addDiagnosisResultAnalyses(session);
+			}
+
+			return response[0];
+		} catch (e) {
+			console.log(e);
 		}
-
-		let response = await execute(SQL.diagnosticsQueries.updateSessionToken({ id, body, session }));
-
-		// Save last completed session as default
-		if (body.status && body.status == 'finished') {
-			await addDiagnosisResultAnalyses(session);
-		}
-
-		return response[0];
 	},
 
 	getDiagnosticContentByDiagnosticId: async function (id, session) {
@@ -519,7 +522,6 @@ module.exports = {
 		}
 	},
 
-
 	getDiagnosticContentByContentId: async function (id, session, contentId) {
 
 
@@ -528,9 +530,7 @@ module.exports = {
 		let childAgeInMonths = sessionDetails?.[0]?.[0]?.child_age_in_months;
 
 		// Get the question IDs for diagnostic extensions, if any
-		let questionIds = await execute(
-			SQL.diagnosticsQueries.getDiagnosticExtendsIds(id, session, childAgeInMonths)
-		);
+		let questionIds = await execute(SQL.diagnosticsQueries.getDiagnosticExtendsIds(id, session, childAgeInMonths));
 
 		// Check if the diagnostic has any extensions
 		let hasDiagnosticExtension = false;
@@ -569,7 +569,9 @@ module.exports = {
 					let classificationAnswers = { classificationResults: [] };
 
 					// Separate classifications with other questions details
-					let othersQuestions = data[0].filter(item => ['text', 'checkbox', 'classification'].includes(item.type));
+					let othersQuestions = data[0].filter(item =>
+						['text', 'checkbox', 'classification'].includes(item.type)
+					);
 
 					// Combine all classifications results into a single result object
 					selectedClassification[0]
@@ -610,15 +612,12 @@ module.exports = {
 	},
 
 	getDiagnosticContentForEvaluation: async function (id, session) {
-
 		// Get session details to extract child age in months
 		let sessionDetails = await execute(SQL.diagnosticsQueries.getDiagnosisSessionDetails(session));
 		let childAgeInMonths = sessionDetails?.[0]?.[0]?.child_age_in_months;
 
 		// Get the question IDs for diagnostic extensions, if any
-		let questionIds = await execute(
-			SQL.diagnosticsQueries.getDiagnosticExtendsIds(id, session, childAgeInMonths)
-		);
+		let questionIds = await execute(SQL.diagnosticsQueries.getDiagnosticExtendsIds(id, session, childAgeInMonths));
 
 		// Check if the diagnostic has any extensions
 		let hasDiagnosticExtension = false;
@@ -627,15 +626,8 @@ module.exports = {
 		}
 
 		// Get the diagnostic content
-		let response = await execute(
-			SQL.diagnosticsQueries.getDiagnosisContentForEval(
-				session,
-				id,
-				childAgeInMonths,
-			)
-		);
+		let response = await execute(SQL.diagnosticsQueries.getDiagnosisContentForEval(session, id, childAgeInMonths));
 		// Return the diagnostic content
 		return response[0];
 	}
-
 };

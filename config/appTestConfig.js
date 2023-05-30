@@ -1,5 +1,6 @@
 const express = require("express");
 const appTest = express();
+appTest.disable("x-powered-by");
 const bodyParser = require('body-parser');
 appTest.use(bodyParser.json());
 appTest.use(bodyParser.urlencoded({extended: true}));

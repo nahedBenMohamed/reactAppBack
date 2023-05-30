@@ -50,7 +50,22 @@ const getAnalysesResultScores = async (req, res) => {
 		});
 	}
 };
-
+const updateQuestionTest5 = async (req, res) => {
+	try {
+		const result = await evaluationService.updateQuestionTest5(req.body.session, req.body.newData);
+		return res.status(200).json({
+			status: 200,
+			data: result,
+			message: 'Analysis question TEST 5 updated succefully '
+		});
+	} catch (e) {
+		return res.status(500).json({
+			status: 500,
+			data: null,
+			message: 'Server error'
+		});
+	}
+};
 const getDiagnosisContentGrammars = async (req, res) => {
 	try {
 		const result = await evaluationService.getDiagnosisContentGrammars(req.query);
@@ -144,5 +159,6 @@ module.exports = {
 	setDiagnosticResultDetail,
 	getArticulationTypes,
 	getLexiconErrorTypes,
-	setDiagnosisContentGrammars
+	setDiagnosisContentGrammars,
+	updateQuestionTest5
 };
