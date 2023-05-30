@@ -815,15 +815,22 @@ const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_gr
 	// get content analysis questions from the database and add them to the 'Fragen' score
 
 	const fragen = await execute(SQL.evaluationsQueries.getAnswersTab2Test5(session));
-	let parsedQuestions = JSON.parse(fragen[0][0].data);
-	// const contentResult = await execute(SQL.evaluationsQueries.getContentAnalysisQuestions(5, session));
-	// console.log(contentResult[0]);
-	parsedQuestions.values?.forEach(async item => {
-		console.log(item.answer);
+	if (fragen[0][0]) {
+		let parsedQuestions = JSON.parse(fragen[0][0].data);
+		// const contentResult = await execute(SQL.evaluationsQueries.getContentAnalysisQuestions(5, session));
+		// console.log(contentResult[0]);
+		parsedQuestions.values?.forEach(async item => {
+			if (item.answer && item.answer == 'correct') needs_grammar_analysis = true;
+			scores[scores.findIndex(x => x.scoreName == 'Fragen')].values.push(item);
+		});
+	} else {
+		const contentResult = await execute(SQL.evaluationsQueries.getContentAnalysisQuestions(5, session));
+		contentResult?.[0]?.forEach(async item => {
+			if (item.answer && item.answer == 'correct') needs_grammar_analysis = true;
+			scores[scores.findIndex(x => x.scoreName == 'Fragen')].values.push(item);
+		});
+	}
 
-		if (item.answer && item.answer == 'correct') needs_grammar_analysis = true;
-		scores[scores.findIndex(x => x.scoreName == 'Fragen')].values.push(item);
-	});
 
 	// add 'Antworten' score
 	scores.push({

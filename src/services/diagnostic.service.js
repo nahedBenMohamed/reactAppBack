@@ -144,7 +144,7 @@ module.exports = {
 
 			// Save last completed session as default
 			if (body.status && body.status == 'finished') {
-				this.addDiagnosisResultAnalyses(session);
+				await this.addDiagnosisResultAnalyses(session);
 			}
 
 			return response[0];
@@ -357,21 +357,29 @@ module.exports = {
 						SQL.diagnosticsQueries.DiagnosticResultQueries(body.session, content, body.result).setNewOne()
 					);
 				}
-				// custom logic for test2 and test7 to insert extendedResult answers to incorrect if answer is already incorrect 
+				// custom logic for test2 and test7 to insert extendedResult answers to incorrect if answer is already incorrect
 				// for test 2 we set answer_01, answer_03, answer_08,answer_09 to incorrect
 				// for test 7 we set answer_01, answer_02, to incorrect
 				// correct score in evaluation
 				if (body.result.answer === 'incorrect' && (body.diagnostic === 2 || body.diagnostic === 7)) {
 					let extendedResult = await execute(
-						SQL.diagnosticsQueries.getDiagnosticExtendedResultDetails(body.session, content, body.diagnostic)
+						SQL.diagnosticsQueries.getDiagnosticExtendedResultDetails(
+							body.session,
+							content,
+							body.diagnostic
+						)
 					);
 
 					// If no extended result exists, set a new one
 					if (extendedResult[0].length === 0) {
-						// prepare extraData 
-						const extendedData = body.diagnostic === 2 ?
-							{ 'answer_01,answer_03,answer_08,answer_09': 'incorrect,incorrect,incorrect,incorrect' } :
-							{ 'answer_01,answer_02': 'incorrect,incorrect' }
+						// prepare extraData
+						const extendedData =
+							body.diagnostic === 2
+								? {
+										'answer_01,answer_03,answer_08,answer_09':
+											'incorrect,incorrect,incorrect,incorrect'
+								  }
+								: { 'answer_01,answer_02': 'incorrect,incorrect' };
 						await execute(
 							SQL.diagnosticsQueries.insetANewExtendedResult(
 								body.session,
@@ -523,8 +531,6 @@ module.exports = {
 	},
 
 	getDiagnosticContentByContentId: async function (id, session, contentId) {
-
-
 		// Get session details to extract child age in months
 		let sessionDetails = await execute(SQL.diagnosticsQueries.getDiagnosisSessionDetails(session));
 		let childAgeInMonths = sessionDetails?.[0]?.[0]?.child_age_in_months;
