@@ -144,6 +144,8 @@ const updateDiagnosticSession = async (req, res) => {
 	}
 };
 
+
+
 const getDiagnosticContent = async (req, res) => {
 	try {
 		const content = await diagnosticService.getDiagnosticContentByDiagnosticId(
@@ -163,6 +165,47 @@ const getDiagnosticContent = async (req, res) => {
 		});
 	}
 };
+
+const getDiagnosticContentByIdContent = async (req, res) => {
+	try {
+		const content = await diagnosticService.getDiagnosticContentByContentId(
+			req.params.id,
+			req.query.session,
+			req.query.contentId
+		);
+		return res.status(200).json({
+			status: 200,
+			data: content,
+			message: 'retrieved diagnostic content successfully'
+		});
+	} catch (error) {
+		return res.status(500).json({
+			status: 500,
+			data: null,
+			message: 'server error'
+		});
+	}
+};
+
+const getDiagnosticForEvaluation = async (req, res) => {
+	try {
+		const content = await diagnosticService.getDiagnosticContentForEvaluation(
+			req.params.id,
+			req.query.session,
+		);
+		return res.status(200).json({
+			status: 200,
+			data: content,
+			message: 'retrieved diagnostic content successfully'
+		});
+	} catch (error) {
+		return res.status(500).json({
+			status: 500,
+			data: null,
+			message: 'server error'
+		});
+	}
+}
 
 const addDiagnosisResult = async (req, res) => {
 	try {
@@ -205,5 +248,7 @@ module.exports = {
 	updateDiagnosticSession,
 	getDiagnosticContent,
 	createNewSession,
-	addDiagnosisResult
+	addDiagnosisResult,
+	getDiagnosticContentByIdContent,
+	getDiagnosticForEvaluation
 };

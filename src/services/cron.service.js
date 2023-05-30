@@ -1,4 +1,4 @@
-const { connection } = require('../providers');
+const { execute } = require('../providers/db');
 const { SQL } = require('../../config');
 const fs = require('fs');
 const path = require('path');
@@ -36,9 +36,9 @@ const permanentDeleteRecordsCron = async () => {
 
                             if (modifiedAt < sixMonthsDuration) {
                                 await fs.promises.unlink(filePath);
-                                const conn = await connection.connection();
-                                await conn.execute(SQL.recordQueries.removeRecords(file));
-                                conn.release();
+                                
+                                await execute(SQL.recordQueries.removeRecords(file));
+                                ;
                             }
                         } catch (error) {
                             console.error(error);

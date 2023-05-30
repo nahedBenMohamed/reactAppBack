@@ -67,6 +67,23 @@ const getDiagnosisContentGrammars = async (req, res) => {
 		});
 	}
 };
+const setDiagnosisContentGrammars = async (req, res) => {
+	try {
+		const result = await evaluationService.setDiagnosisContentGrammars(req.body);
+		return res.status(200).json({
+			status: 200,
+			data: result[0],
+			message: 'Analysis result score for test 5 details updated successfully'
+		});
+	} catch (e) {
+		console.log(e);
+		return res.status(500).json({
+			status: 500,
+			data: null,
+			message: 'Server error'
+		});
+	}
+};
 
 const setDiagnosticResultDetail = async (req, res) => {
 	try {
@@ -126,5 +143,6 @@ module.exports = {
 	getDiagnosisContentGrammars,
 	setDiagnosticResultDetail,
 	getArticulationTypes,
-	getLexiconErrorTypes
+	getLexiconErrorTypes,
+	setDiagnosisContentGrammars
 };

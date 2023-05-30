@@ -1,12 +1,12 @@
-const { connection } = require('../providers');
+const { execute } = require('../providers/db');
 const { SQL } = require('../../config');
 
 module.exports = {
 	getGenders: async function () {
 		try {
-			const conn = await connection.connection();
-			const data = await conn.execute(SQL.allQuery.getGenders);
-			conn.release();
+			
+			const data = await execute(SQL.allQuery.getGenders);
+			;
 			return data[0];
 		} catch (error) {
 			console.error('Error getting genders: ', error);
@@ -16,9 +16,9 @@ module.exports = {
 
 	getLanguages: async function () {
 		try {
-			const conn = await connection.connection();
-			const data = await conn.execute(SQL.allQuery.getLanguages);
-			conn.release();
+			
+			const data = await execute(SQL.allQuery.getLanguages);
+			;
 			return data[0];
 		} catch (error) {
 			console.error('Error getting languages: ', error);

@@ -1,4 +1,4 @@
-const { connection } = require('../providers');
+const { execute } = require('../providers/db');
 const { SQL } = require('../../config');
 const { getChildById } = require('./child.service');
 const { parseDataJson } = require('../helpers/properties');
@@ -6,12 +6,12 @@ const { formatAccordionData } = require('../helpers');
 
 const getAnalyses = async query => {
 	try {
-		const conn = await connection.connection(); // Establish a database connection
+		// Establish a database connection
 		let sql = query.childId
 			? SQL.evaluationsQueries.getAnalysesByChildId(query.childId)
 			: SQL.evaluationsQueries.getAnalyses;
-		const data = await conn.execute(sql); // Execute the query and store the results in the "data" variable
-		conn.release(); // Release the database connection
+		const data = await execute(sql); // Execute the query and store the results in the "data" variable
+		; // Release the database connection
 		return data[0]; // Return the first row of the result set
 	} catch (error) {
 		console.error(error); // Log any errors to the console
@@ -21,14 +21,14 @@ const getAnalyses = async query => {
 
 const setAnalysesResult = async body => {
 	try {
-		const conn = await connection.connection(); // Establish a database connection
+		// Establish a database connection
 
 		// Call getAnalysesResultScores() to fetch the result scores
 		let result = await getAnalysesResultScores(body);
 
 		// If use_in_profile is set to 'yes', update the analyses result profile in the database
 		if (body.use_in_profile === 'yes') {
-			await conn.execute(
+			await execute(
 				SQL.evaluationsQueries.updateAnalysesResultProfile(
 					result?.diagnostic_session.diagnostic,
 					result.diagnostic_session.child
@@ -108,11 +108,11 @@ const setAnalysesResult = async body => {
 				}
 
 				// Execute the SQL query and return the result
-				return await conn.execute(sql);
+				return await execute(sql);
 			})
 		);
 
-		conn.release(); // Release the database connection
+		; // Release the database connection
 		return results;
 	} catch (error) {
 		console.error(error); // Log any errors to the console
@@ -121,10 +121,10 @@ const setAnalysesResult = async body => {
 };
 
 const getAnalysesResultScores = async body => {
-	const conn = await connection.connection(); // Establish a database connection
+	// Establish a database connection
 
 	// Fetch the diagnosis session details from the database
-	const session = await conn.execute(SQL.diagnosticsQueries.getDiagnosisSessionDetails(body.session));
+	const session = await execute(SQL.diagnosticsQueries.getDiagnosisSessionDetails(body.session));
 	let diagnosticId = session[0]?.[0]?.diagnostic;
 
 	// Fetch the child details from the database
@@ -134,12 +134,12 @@ const getAnalysesResultScores = async body => {
 	let childLanguage = child?.[0]?.languages.length > 1 ? 'm' : 'e';
 
 	// Fetch the raw and total values from the database
-	let data = await conn.execute(SQL.evaluationsQueries.getSumResultAnalysesBySession(body.session));
+	let data = await execute(SQL.evaluationsQueries.getSumResultAnalysesBySession(body.session));
 	let rawValue = data[0]?.[0].raw_value;
 	let totalValue = +data[0]?.[0].total_value;
 
 	// Fetch the analyses diagnosis details from the database
-	let result = await conn.execute(
+	let result = await execute(
 		SQL.evaluationsQueries.getAnalysesDiagnosis(diagnosticId, childAgeInMonths, childGender, childLanguage)
 	);
 
@@ -162,13 +162,12 @@ const getAnalysesResultScores = async body => {
 		totalValue
 	);
 
-	conn.release(); // Release the database connection
+	; // Release the database connection
 
 	// Reverse the scores array for diagnosis ID 7
 	if (diagnosticId == 7) {
 		scores.reverse();
 	}
-
 	return { scores: scores, diagnostic_session: session[0]?.[0] };
 };
 const getAnalysesValue = async (
@@ -184,13 +183,12 @@ const getAnalysesValue = async (
 	let scoreTable = [],
 		scores = [];
 	let total = 0,
-		decimals = 0,
-		type_total;
+		decimals = 0;
 	let akkusativ_used,
 		dativ_used,
 		raw_value_append,
 		ratio = '-',
-		visibile = null,
+		visible = null,
 		raw_value_append_akkusativ_label = '',
 		raw_value_append_dativ_label = '';
 	let needs_extended_analysis_dativ = false,
@@ -199,146 +197,150 @@ const getAnalysesValue = async (
 		needs_grammar_analysis = false,
 		hide_questions = false;
 	if (diagnosticId == 5) {
-		visibile = 'no';
-		scores.push({
-			scoreName: 'Situationsbilder beschreiben',
-			type: 'compact_values',
-			values: []
-		});
+		visible = 'no';
 	}
-	const conn = await connection.connection();
-	const raw_values = await getRawValues(body.session, diagnosticId);
-	await Promise.all(
-		result?.[0]?.map(async item => {
-			let raw_value_specific;
-			let score_name = item.score_name;
-			switch (score_name) {
-				case 'Nomen & Verben (phonologisch)':
-					raw_value_specific = await getRawValue(raw_values, 'phonologischer Ablenker Nomen und Verben ');
-					break;
-				case 'Nomen (semantisch)':
-					raw_value_specific = await getRawValue(raw_values, 'semantischer Ablenker Nomen');
-					break;
-				case 'Verben (semantisch)':
-					raw_value_specific = await getRawValue(raw_values, 'semantischer Ablenker Verben');
-					break;
-				case 'Wortschatz: Nomen':
-					raw_value_specific =
-						(await getRawValueByTagName(body.session, 'Nomen')) +
-						(await getRawValueAppendByTagName(body.session, 'Nomen', '02', 'answer_01'));
-					break;
-				case 'Aussprache: Phonologie':
-					raw_value_specific = +rawValue + (await getRawValueAppend(body.session, '02', 'answer_03'));
-					break;
-				case 'Artikeleinsetzung': {
-					raw_value_append = await getRawValueAppend(body.session, '07', 'answer_01');
-					raw_value_specific = +rawValue + +raw_value_append;
-					break;
+	const scorePromises = result?.[0]?.map(async item => {
+		let raw_value_specific = 0;
+		let score_name = item.score_name;
+		switch (diagnosticId) {
+			case 1:
+				const raw_values = await getRawValues(body.session, diagnosticId);
+				switch (score_name) {
+					case 'Nomen & Verben (phonologisch)':
+						raw_value_specific = await getRawValue(raw_values, 'phonologischer Ablenker Nomen und Verben ');
+						break;
+					case 'Nomen (semantisch)':
+						raw_value_specific = await getRawValue(raw_values, 'semantischer Ablenker Nomen');
+						break;
+					case 'Verben (semantisch)':
+						raw_value_specific = await getRawValue(raw_values, 'semantischer Ablenker Verben');
+						break;
 				}
-				case 'Genusmarkierung': {
-					raw_value_append = await getRawValueAppend(body.session, '07', 'answer_02');
-					raw_value_specific = +rawValue + +raw_value_append;
-					break;
+				break;
+			case 2:
+				switch (score_name) {
+					case 'Wortschatz: Nomen':
+						raw_value_specific =
+							(await getRawValueByTagName(body.session, 'Nomen')) +
+							(await getRawValueAppendByTagName(body.session, 'Nomen', '02', 'answer_01'));
+						break;
+					case 'Wortschatz: Verben':
+						raw_value_specific =
+							(await getRawValueByTagName(body.session, 'Verb')) +
+							(await getRawValueAppendByTagName(body.session, 'Verb', '02', 'answer_01'));
+						break;
+					case 'Aussprache: Phonologie':
+						raw_value_specific = +rawValue + (await getRawValueAppend(body.session, '02', 'answer_03'));
+						break;
 				}
-				case 'MLU':
-				case 'Vollständigkeit': {
-					const result = await getRawValueForExtendAnswer(body.session, score_name);
-					rawValue = result.rawValue;
-					ratio = result.ratio;
-					decimals = result.decimals;
-					break;
+				break;
+			case 5:
+				let grammars = await getDiagnosisContentGrammars({
+					session: body.session,
+					childAgeInMonths: childAgeInMonths
+				});
+				switch (score_name) {
+					case 'MLU':
+					case 'Vollständigkeit':
+						const result = await getRawValueForExtendAnswer(body.session, score_name);
+						raw_value_specific = result.rawValue;
+						ratio = result.ratio;
+						decimals = result.decimals;
+						break;
+					case 'Score A':
+						raw_value_specific = grammars?.scores?.total.a;
+						break;
+					case 'Score B ':
+						raw_value_specific = grammars?.scores?.total.b;
+						break;
 				}
-				case 'Akkusativ': {
-					let sumRawValue = await conn.execute(
-						SQL.evaluationsQueries.getSumExtendedAnswer(body.session, score_name)
-					);
-					let labelResult = await conn.execute(SQL.evaluationsQueries.getLabel(diagnosticId, score_name));
-					akkusativ_used = +sumRawValue[0]?.[0].raw_value_append;
-					raw_value_append_akkusativ_label = labelResult[0]?.[0].label;
-					raw_value_specific = rawValueAkkusativ;
-					break;
+				break;
+			case 7:
+				switch (score_name) {
+					case 'Artikeleinsetzung': {
+						raw_value_append = await getRawValueAppend(body.session, '07', 'answer_01');
+						raw_value_specific = +rawValue + +raw_value_append;
+						break;
+					}
+					case 'Genusmarkierung': {
+						raw_value_append = await getRawValueAppend(body.session, '07', 'answer_02');
+						raw_value_specific = +rawValue + +raw_value_append;
+						break;
+					}
 				}
-				case 'Dativ': {
-					let sumRawValue = await conn.execute(
-						SQL.evaluationsQueries.getSumExtendedAnswer(body.session, score_name)
-					);
-					let labelResult = await conn.execute(SQL.evaluationsQueries.getLabel(diagnosticId, score_name));
-					dativ_used = +sumRawValue[0]?.[0].raw_value_append;
-					raw_value_append_dativ_label = labelResult[0]?.[0].label;
-					raw_value_specific = rawValueDativ;
-					break;
+				break;
+			case 9:
+				switch (score_name) {
+					case 'Akkusativ': {
+						let sumRawValue = await execute(
+							SQL.evaluationsQueries.getSumExtendedAnswer(body.session, score_name)
+						);
+						let labelResult = await execute(SQL.evaluationsQueries.getLabel(diagnosticId, score_name));
+						akkusativ_used = +sumRawValue[0]?.[0].raw_value_append;
+						raw_value_append_akkusativ_label = labelResult[0]?.[0].label;
+						raw_value_specific = rawValueAkkusativ;
+						break;
+					}
+					case 'Dativ': {
+						let sumRawValue = await execute(
+							SQL.evaluationsQueries.getSumExtendedAnswer(body.session, score_name)
+						);
+						let labelResult = await execute(SQL.evaluationsQueries.getLabel(diagnosticId, score_name));
+						dativ_used = +sumRawValue[0]?.[0].raw_value_append;
+						raw_value_append_dativ_label = labelResult[0]?.[0].label;
+						raw_value_specific = rawValueDativ;
+						break;
+					}
+
+					default:
+					// code block
 				}
-				case 'Score A': {
-					let grammars = await getDiagnosisContentGrammars({
-						session: body.session,
-						childAgeInMonths: childAgeInMonths
-					});
-					raw_value = grammars?.scores?.total.a;
-					break;
-				}
-				case 'Score B ': {
-					let grammars = await getDiagnosisContentGrammars({
-						session: body.session,
-						childAgeInMonths: childAgeInMonths
-					});
-					raw_value = grammars?.scores?.total.b;
-					break;
-				}
-				default:
-				// code block
-			}
-			if ([3, 4, 8, 6, 5].includes(diagnosticId)) {
+				break;
+			case 3:
+			case 4:
+			case 6:
+			case 8:
 				raw_value_specific = rawValue;
-			}
-			if (diagnosticId == 10) {
+				break;
+			case 10:
 				const result = await diagnostic_10_Result(body.session, diagnosticId, rawValue);
 				raw_value_specific = result.rawValue;
 				scoreTable = [...result.scoreTable];
-			}
-			let resp = await conn.execute(SQL.evaluationsQueries.getAnalysesValues(item.id, raw_value_specific));
-			let score = resp[0]?.[0];
-			if (score?.interpretation < 2) {
+				break;
+		}
+		let resp = await execute(SQL.evaluationsQueries.getAnalysesValues(item.id, raw_value_specific));
+		let score = resp[0]?.[0];
+		if (score?.interpretation < 2) {
+			if ([2, 6, 7].includes(diagnosticId)) {
 				needs_extended_analysis = true;
+			}
+			if (diagnosticId == 9) {
 				if (score_name == 'Dativ') needs_extended_analysis_dativ = true;
 				if (score_name == 'Akkusativ') needs_extended_analysis_akkusativ = true;
 			}
-
-			let foundIndex = scores.findIndex(x => x.scoreName == 'Situationsbilder beschreiben');
-			if (await checkNeedGrammarAnalyses(score, score_name, childAgeInMonths)) {
-				needs_grammar_analysis = true;
-				hide_questions = true;
-			}
-
-			scores[foundIndex]?.values.push({
-				name: score_name,
-				raw_value: score?.raw_value,
-				class: score?.interpretation < 0 ? 'red' : 'green',
-				tvalue: score?.tvalue,
-				decimals: decimals,
-				width: 'small-3'
-			});
-
-			scores.push({
-				scoreName: score_name,
-				type: 'values',
-				visible: visibile,
-				tvalue: score?.tvalue,
-				values: {
-					raw_value: score?.raw_value,
-					score: score?.score,
-					tvalue: score?.tvalue,
-					confidence_interval: score?.confidence_interval
-				},
-				decimals: decimals,
-				interpretation: score?.interpretation
-			});
-			if (scoreTable.length > 0) scores = [...scores, ...scoreTable];
-			return scores;
-		})
-	);
-	//respect same view np order (Wortschatz: Nomen, Wortschatz: Verben,Aussprache: Phonologie)
-	const last = scores.pop();
-	scores.unshift(last);
+		}
+		if (checkNeedGrammarAnalyses(score, score_name, childAgeInMonths)) {
+			needs_grammar_analysis = true;
+			hide_questions = true;
+		}
+		return {
+			scoreName: score_name,
+			type: 'values',
+			visible: visible,
+			tvalue: score?.tvalue || 0,
+			values: {
+				raw_value: score?.raw_value || '0.0',
+				score: score?.score || 0,
+				tvalue: score?.tvalue || 0,
+				confidence_interval: score?.confidence_interval || '-'
+			},
+			decimals: decimals,
+			interpretation: score?.interpretation || 0,
+			id: item.id,
+		};
+	})
+	scores = await resolvePromisesSeq(scorePromises);
+	if (scoreTable.length > 0) scores = [...scores, ...scoreTable];
 	switch (diagnosticId) {
 		case 2:
 			scores = await getScoreForTest2(
@@ -348,6 +350,7 @@ const getAnalysesValue = async (
 				childAgeInMonths,
 				needs_extended_analysis
 			);
+			break;
 		case 3:
 		case 4:
 		case 8:
@@ -375,7 +378,7 @@ const getAnalysesValue = async (
 			break;
 	}
 
-	conn.release();
+	;
 	if (diagnosticId == 5) {
 		const specificationsTest5 = [
 			'Detaillierte Auswertung',
@@ -405,9 +408,9 @@ const getRawValueByTagName = async (session, tagName) => {
 	// Use a try-catch block to catch any errors that may occur during the execution of the code.
 	try {
 		// Rename the `data` variable to `queryResult` to make its purpose clearer.
-		const conn = await connection.connection();
-		const queryResult = await conn.execute(SQL.evaluationsQueries.getRawValueByTag(session, tagName));
-		conn.release();
+
+		const queryResult = await execute(SQL.evaluationsQueries.getRawValueByTag(session, tagName));
+		;
 		// Add a fallback value of 0 in case the query result is undefined or the raw_value property is undefined.
 		return +queryResult?.[0]?.[0]?.raw_value || 0;
 	} catch (error) {
@@ -421,11 +424,11 @@ const getRawValueAppendByTagName = async (session, tagName, id, answerId) => {
 	// Use a try-catch block to catch any errors that may occur during the execution of the code.
 	try {
 		// Rename the `dataAppend` variable to `queryResult` to make its purpose clearer.
-		const conn = await connection.connection();
-		const queryResult = await conn.execute(
+
+		const queryResult = await execute(
 			SQL.evaluationsQueries.getRawValueAppendByTag(id, answerId, session, tagName)
 		);
-		conn.release();
+		;
 		// Add a fallback value of 0 in case the query result is undefined or the raw_value_append property is undefined.
 		return +queryResult?.[0]?.[0]?.raw_value_append || 0;
 	} catch (error) {
@@ -439,9 +442,9 @@ const getRawValueAppend = async (session, id, answerId) => {
 	// Use a try-catch block to catch any errors that may occur during the execution of the code.
 	try {
 		// Rename the `data` variable to `queryResult` to make its purpose clearer.
-		const conn = await connection.connection();
-		const queryResult = await conn.execute(SQL.evaluationsQueries.getRawValueAppend(id, answerId, session));
-		conn.release();
+
+		const queryResult = await execute(SQL.evaluationsQueries.getRawValueAppend(id, answerId, session));
+		;
 		// Add a fallback value of 0 in case the query result is undefined or the raw_value_append property is undefined.
 		return +queryResult?.[0]?.[0]?.raw_value_append || 0;
 	} catch (error) {
@@ -458,11 +461,11 @@ const getRawValues = async (session, diagnosticId) => {
 	if (diagnosticId) {
 		// Use a try-catch block to catch any errors that may occur during the execution of the code.
 		try {
-			const conn = await connection.connection();
-			const queryResult = await conn.execute(SQL.evaluationsQueries.getTagsResult(session));
+
+			const queryResult = await execute(SQL.evaluationsQueries.getTagsResult(session));
 			// Use the Array.prototype.map method to create an array of objects with the name and value properties.
 			raw_values = queryResult?.[0]?.map(item => ({ name: item.name, value: item.raw_value })) || [];
-			conn.release();
+			;
 		} catch (error) {
 			console.error(`Error in getRawValues: ${error}`);
 			return raw_values;
@@ -478,8 +481,8 @@ const diagnostic_10_Result = async (session, diagnosticId, rawValue) => {
 	let scoreTable = [];
 
 	try {
-		const conn = await connection.connection();
-		const diagnosisContentResult = await conn.execute(SQL.diagnosticsQueries.getDiagnosisContentById(diagnosticId));
+
+		const diagnosisContentResult = await execute(SQL.diagnosticsQueries.getDiagnosisContentById(diagnosticId));
 		// Use the Array.prototype.map method to create an array of objects for scoreTable.
 		scoreTable =
 			diagnosisContentResult?.[0]?.map(item => ({
@@ -490,7 +493,7 @@ const diagnostic_10_Result = async (session, diagnosticId, rawValue) => {
 				values: []
 			})) || [];
 
-		const resultExtend = await conn.execute(
+		const resultExtend = await execute(
 			SQL.evaluationsQueries.getResultDiagnosticExtend(diagnosticId, session)
 		);
 		let show_do_extended_analysis = true;
@@ -526,7 +529,7 @@ const diagnostic_10_Result = async (session, diagnosticId, rawValue) => {
 			});
 		}
 
-		conn.release();
+		;
 		return { scoreTable: scoreTable, rawValue: rawValue };
 	} catch (error) {
 		console.error(`Error in diagnostic_10_Result: ${error}`);
@@ -535,8 +538,8 @@ const diagnostic_10_Result = async (session, diagnosticId, rawValue) => {
 };
 
 const getRawValueForExtendAnswer = async (session, score_name) => {
-	const conn = await connection.connection();
-	const extendAnswer = await conn.execute(SQL.evaluationsQueries.getExtendedAnswers(session));
+
+	//const extendAnswer = await execute(SQL.evaluationsQueries.getExtendedAnswers(session));
 
 	let words = 0,
 		sentences = 0;
@@ -548,41 +551,49 @@ const getRawValueForExtendAnswer = async (session, score_name) => {
 	let ratio = '-';
 	let type_total;
 	let decimals = 0;
-
 	// Use a for-of loop instead of Array.prototype.map to work with async-await.
-	for (const answer of extendAnswer?.[0] || []) {
-		if (score_name == 'Vollständigkeit') {
+	if (score_name == 'Vollständigkeit') {
+		const extendAdditionals = await execute(SQL.evaluationsQueries.getResultExtendedAnswers(session, 'additional'));
+		for (const answer of extendAdditionals?.[0] || []) {
 			let additional = JSON.parse('[' + answer.additional + ']');
-			if (additional[0]?.class == 'green') full++;
-			if (additional[0]?.class == 'red') incomplete++;
-			if (additional[0]?.class != 'grey') total++;
+			switch (additional[0]?.class) {
+				case 'green':
+					full++
+					total++
+					break;
+				case 'red':
+					incomplete++
+					total++
+					break;
+				case undefined:
+					break;
+			}
 			if (additional[0]?.checks?.includes('1')) type1++;
 			if (additional[0]?.checks?.includes('2')) type2++;
-		} else {
+		}
+	} else {
+		const extendAnswers = await execute(SQL.evaluationsQueries.getResultExtendedAnswers(session, 'answer'));
+		for (const answer of extendAnswers?.[0] || []) {
 			words += answer.answer.split(' ').length;
 			sentences++;
 		}
 	}
-
 	if (score_name == 'MLU') {
 		// Calculate rawValue and set decimals to 1 for MLU score.
-		let rawValue = sentences > 0 ? (words / sentences).toFixed(2) : 0;
+		let rawValue = sentences > 0 ? (words / sentences).toFixed(1) : 0;
 		// Check if rawValue is truthy and a string before applying substring
-		if (rawValue && typeof rawValue === 'string') {
-			rawValue = rawValue.substring(0, rawValue.length - 1);
-		}
 		decimals = 1;
 		// Return object with rawValue, ratio, and decimals properties.
 		return { rawValue: +rawValue, ratio: ratio, decimals: decimals };
 	} else {
 		// Calculate rawValue for Vollständigkeit score.
-		let rawValue = total > 0 ? Math.trunc((full / total) * 100) : 0;
+		let rawValue = total > 0 ? Math.floor((full / total) * 100) : 0;
 		type_total = type1 + type2;
 		// Calculate ratio if type_total is greater than 0.
 		if (type_total > 0) {
 			ratio = Math.round((type1 / type_total) * 100) + '% - ' + Math.round((type2 / type_total) * 100) + '%';
 		}
-		conn.release();
+		;
 		// Return object with rawValue, ratio, and decimals properties.
 		return { rawValue: rawValue, ratio: ratio, decimals: decimals };
 	}
@@ -590,8 +601,8 @@ const getRawValueForExtendAnswer = async (session, score_name) => {
 
 const getScoreTableByTag = async (scores, session, childAgeInMonths, diagnosticId, total) => {
 	let values = [];
-	const conn = await connection.connection();
-	const resultTag = await conn.execute(SQL.evaluationsQueries.getResultTag(session, childAgeInMonths, diagnosticId));
+
+	const resultTag = await execute(SQL.evaluationsQueries.getResultTag(session, childAgeInMonths, diagnosticId));
 
 	// Use a for-of loop instead of Array.prototype.map to work with async-await.
 	for (const item of resultTag?.[0] || []) {
@@ -614,21 +625,19 @@ const getScoreTableByTag = async (scores, session, childAgeInMonths, diagnosticI
 		values: await calculateErrorDistribution(values, 'count_incorrect', total, 'error_distribution')
 	});
 
-	conn.release();
+	;
 	return scores;
 };
 
 const getScoreExtend = async (scores, session, needs_extended_analysis, total) => {
-	const conn = await connection.connection();
-
 	let show_do_extended_analysis = false;
 	let values = [];
-	const resultExtended = await conn.execute(SQL.diagnosticsQueries.getDiagnosisExtended(6));
+	const resultExtended = await execute(SQL.diagnosticsQueries.getDiagnosisExtended(6));
 
 	// Use Promise.all to make all the async calls concurrently and wait for them to finish.
 	await Promise.all(
 		resultExtended?.[0]?.map(async item => {
-			const resultScore = await conn.execute(
+			const resultScore = await execute(
 				SQL.evaluationsQueries.getEvaluationDetails(item.answer_id, session)
 			);
 			values.push({
@@ -640,18 +649,17 @@ const getScoreExtend = async (scores, session, needs_extended_analysis, total) =
 			// No need to return anything from this map function.
 		})
 	);
-
 	if (show_do_extended_analysis) {
 		scores.push({
 			scoreName: 'Detailauswertung',
 			type: 'message',
-			visible: diagnosticId != 2 ? 'yes' : 'no',
+			visible: 'yes',
 			label: needs_extended_analysis ? 'label_do_extended_analysis' : 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis
 				? {
-						tabSelected: 1,
-						label: 'btn_go_to_data'
-				  }
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
 				: null
 		});
 	} else {
@@ -665,7 +673,7 @@ const getScoreExtend = async (scores, session, needs_extended_analysis, total) =
 		});
 	}
 
-	conn.release();
+	;
 	return scores;
 };
 
@@ -679,13 +687,13 @@ const getScoreForTest9 = async (
 	akkusativ_used,
 	dativ_used
 ) => {
-	const conn = await connection.connection();
+
 	let totalAkkusative = 0,
 		totalDativ = 0;
 	const values = [];
 	let show_do_extended_analysis = false;
 	let head = ['label_error_type', 'label_error_count', 'label_error_distribution'];
-	const resultExtended = await conn.execute(SQL.diagnosticsQueries.getDiagnosisExtended(9));
+	const resultExtended = await execute(SQL.diagnosticsQueries.getDiagnosisExtended(9));
 	scores.push({
 		scoreName: 'Detailauswertung Akkusativ',
 		type: 'table',
@@ -700,7 +708,7 @@ const getScoreForTest9 = async (
 	});
 	await Promise.all(
 		resultExtended?.[0]?.map(async item => {
-			const resultScoreAkkusativ = await conn.execute(
+			const resultScoreAkkusativ = await execute(
 				SQL.evaluationsQueries.getResultDetails(item.answer_id, session, 'Akkusativ')
 			);
 			let foundIndex = scores.findIndex(x => x.scoreName == 'Detailauswertung Akkusativ');
@@ -711,7 +719,7 @@ const getScoreForTest9 = async (
 			totalAkkusative = totalAkkusative + resultScoreAkkusativ[0]?.[0].t_value;
 			if (resultScoreAkkusativ[0]?.[0].t_value == null) show_do_extended_analysis = true;
 
-			const resultScoreDativ = await conn.execute(
+			const resultScoreDativ = await execute(
 				SQL.evaluationsQueries.getResultDetails(item.answer_id, session, 'Dativ')
 			);
 			let foundIndexD = scores.findIndex(x => x.scoreName == 'Detailauswertung Akkusativ');
@@ -745,9 +753,9 @@ const getScoreForTest9 = async (
 				: 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis_akkusativ
 				? {
-						tabSelected: 1,
-						label: 'btn_go_to_data'
-				  }
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
 				: null
 		};
 		scores[foundIndexD] = {
@@ -758,9 +766,9 @@ const getScoreForTest9 = async (
 				: 'label_no_need_for_extended_analysis',
 			link: needs_extended_analysis_dativ
 				? {
-						tabSelected: 1,
-						label: 'btn_go_to_data'
-				  }
+					tabSelected: 1,
+					label: 'btn_go_to_data'
+				}
 				: null
 		};
 	} else {
@@ -777,13 +785,28 @@ const getScoreForTest9 = async (
 			'error_distribution'
 		);
 	}
-	conn.release();
+	;
 	return scores;
 };
 const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_grammar_analysis) => {
 	// establish database connection
-	const conn = await connection.connection();
-
+	let scorePromises = scores.map(async item => {
+		let resp = await execute(SQL.evaluationsQueries.getAnalysesValues(item.id, item.values.raw_value));
+		let score = resp[0]?.[0] || item;
+		return value = {
+			name: item.scoreName,
+			raw_value: score.raw_value,
+			tvalue: score.tvalue,
+			class: score.interpretation < 0 ? "red" : "green",
+			decimals: item.score_name === "MLU" ? 1 : 0,
+			width: "small-3"
+		};
+	})
+	scores.push({
+		scoreName: 'Situationsbilder beschreiben',
+		type: 'compact_values',
+		values: await resolvePromisesSeq(scorePromises)
+	});
 	// add ratio value to 'Situationsbilder beschreiben' score
 	scores[scores.findIndex(x => x.scoreName == 'Situationsbilder beschreiben')].values.push({
 		name: 'Ausl. obl. Konst. - Ausl. Funktionswort',
@@ -807,7 +830,7 @@ const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_gr
 	});
 
 	// get content analysis questions from the database and add them to the 'Fragen' score
-	const contentResult = await conn.execute(SQL.evaluationsQueries.getContentAnalysisQuestions(5, session));
+	const contentResult = await execute(SQL.evaluationsQueries.getContentAnalysisQuestions(5, session));
 	contentResult?.[0]?.forEach(async item => {
 		if (item.answer && item.answer == 'correct') needs_grammar_analysis = true;
 		scores[scores.findIndex(x => x.scoreName == 'Fragen')].values.push(item);
@@ -822,7 +845,7 @@ const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_gr
 	});
 
 	// get extended answers from the database and add them to the 'Antworten' score
-	let resultExtend = await conn.execute(SQL.evaluationsQueries.getExtendedAnswers(session));
+	let resultExtend = await execute(SQL.evaluationsQueries.getExtendedAnswers(session));
 	resultExtend?.[0]?.forEach(async item => {
 		item.additional = JSON.parse('[' + item.additional + ']');
 		scores[scores.findIndex(x => x.scoreName == 'Antworten')].values.push(item);
@@ -854,7 +877,7 @@ const getScoreForTest5 = async (ratio, scores, hide_questions, session, needs_gr
 	});
 
 	// release database connection
-	conn.release();
+	;
 
 	// return scores array
 	return scores;
@@ -891,7 +914,7 @@ const checkNeedGrammarAnalyses = (score, score_name, childAgeInMonths) => {
 
 const setDiagnosticResultDetail = async body => {
 	let results;
-	const conn = await connection.connection();
+
 
 	// Destructure the input parameters
 	const { session, diagnosticId, diagnosticContent, answer, answerId } = body;
@@ -899,7 +922,7 @@ const setDiagnosticResultDetail = async body => {
 	// Check if session, diagnosticId and diagnosticContent are defined
 	if (session && diagnosticId && diagnosticContent) {
 		// Get the diagnostic result detail using diagnosticId, diagnosticContent and session as parameters
-		let result = await conn.execute(
+		let result = await execute(
 			SQL.evaluationsQueries.getDiagnosticResultDetail(diagnosticId, diagnosticContent, session)
 		);
 
@@ -907,7 +930,7 @@ const setDiagnosticResultDetail = async body => {
 		if (answer && answerId) {
 			// If result is found, edit the diagnostic result detail using the same parameters as setDiagnosticResultDetail
 			if (result[0].length > 0) {
-				results = await conn.execute(
+				results = await execute(
 					SQL.evaluationsQueries.editDiagnosticResultDetail(
 						diagnosticId,
 						diagnosticContent,
@@ -919,7 +942,7 @@ const setDiagnosticResultDetail = async body => {
 			}
 			// If result is not found, set a new diagnostic result detail using the same parameters as setDiagnosticResultDetail
 			else {
-				results = await conn.execute(
+				results = await execute(
 					SQL.evaluationsQueries.setDiagnosticResultDetail(
 						diagnosticId,
 						diagnosticContent,
@@ -931,15 +954,15 @@ const setDiagnosticResultDetail = async body => {
 			}
 		}
 	}
-	conn.release();
+	;
 	return results;
 };
 
 const getArticulationTypes = async () => {
 	try {
-		const conn = await connection.connection();
-		const data = await conn.execute(SQL.evaluationsQueries.getArticulationType);
-		conn.release();
+
+		const data = await execute(SQL.evaluationsQueries.getArticulationType);
+		;
 		return data[0];
 	} catch (err) {
 		console.error(`Error in getArticulationTypes: ${err}`);
@@ -949,9 +972,9 @@ const getArticulationTypes = async () => {
 
 const getLexiconErrorTypes = async () => {
 	try {
-		const conn = await connection.connection();
-		const data = await conn.execute(SQL.evaluationsQueries.getLexiconErrorType);
-		conn.release();
+
+		const data = await execute(SQL.evaluationsQueries.getLexiconErrorType);
+		;
 		return data[0];
 	} catch (err) {
 		console.error(`Error in getLexiconErrorTypes: ${err}`);
@@ -961,7 +984,7 @@ const getLexiconErrorTypes = async () => {
 
 const getDiagnosisContentGrammars = async body => {
 	try {
-		const conn = await connection.connection();
+		
 		let sql = SQL.diagnosticsQueries.getDiagnosisGrammar(body.childAgeInMonths);
 
 		// Conditionally add session to the SQL query
@@ -969,7 +992,7 @@ const getDiagnosisContentGrammars = async body => {
 			sql = SQL.diagnosticsQueries.getDiagnosisGrammarWitSession(body.session, body.childAgeInMonths);
 		}
 
-		const data = await conn.execute(sql);
+		const data = await execute(sql);
 
 		// Initialize variables for scores
 		let items = [];
@@ -1032,46 +1055,62 @@ const getDiagnosisContentGrammars = async body => {
 		scores.total.a = a_score;
 		scores.total.b = b_score;
 
-		conn.release();
 		return { scores, items };
 	} catch (err) {
 		// Handle errors
 		console.error(err);
 		throw err;
 	}
-};
 
+};
+const setDiagnosisContentGrammars = async body => {
+	try {
+		let sql = '';
+		// Conditionally add session to the SQL query
+		if (body.remove) {
+			sql = SQL.diagnosticsQueries.removeDiagnosisGrammarWitSession(body.session, body.questionId, body.answers);
+		} else {
+			sql = SQL.diagnosticsQueries.setDiagnosisGrammarWitSession(body.session, body.questionId, body.answers);
+		}
+
+		const data = await execute(sql);
+		return data;
+	} catch (err) {
+		console.log(err);
+		// Handle errors
+		console.error(err);
+		throw err;
+	}
+};
 // Fetches segments for consonants from the database
 const getSegmentsForConsonants = async () => {
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.evaluationsQueries.getSegment);
-	conn.release();
+
+	let data = await execute(SQL.evaluationsQueries.getSegment);
+	;
 	return data[0];
 };
 
 // Fetches segments for vowels from the database and formats the result
 const getSegmentsForVowels = async () => {
-	const conn = await connection.connection();
-	let data = await conn.execute(SQL.evaluationsQueries.getVowels);
+
+	let data = await execute(SQL.evaluationsQueries.getVowels);
 	let result = [];
 	data[0].map(item => {
 		item.letters = item.name;
 		result.push(item);
 	});
-	conn.release();
+	;
 	return result;
 };
 
 const getWordPhonetic = async (score_append_text, id, session, answerId) => {
 	// Establish database connection
-	const conn = await connection.connection();
 
 	// Initialize empty array for word phonetic data
 	let word_phonetic = [];
 
 	// Get diagnosis content result details from the database
-	const data = await conn.execute(SQL.diagnosticsQueries.getDiagnosisContentResultDetails(id, session, answerId));
-
+	const data = await execute(SQL.diagnosticsQueries.getDiagnosisContentResultDetails(id, session, answerId));
 	// Push the name and index of each item in data to the word phonetic array
 	data?.[0]?.forEach((item, index) => {
 		word_phonetic.push({ name: index + 1, value: item.name });
@@ -1081,10 +1120,10 @@ const getWordPhonetic = async (score_append_text, id, session, answerId) => {
 	});
 
 	// Remove the last comma and add a period to the end of score_append_text
-	score_append_text = score_append_text.slice(0, -1) + '.';
+	score_append_text = score_append_text.slice(0, -2) + '.';
 
 	// Release the database connection
-	conn.release();
+	;
 
 	// Return an object with score_append_text, word_phonetic, and data
 	return { score_append_text: score_append_text, word_phonetic: word_phonetic, data: data[0] };
@@ -1093,9 +1132,9 @@ const getWordPhonetic = async (score_append_text, id, session, answerId) => {
 const getLexiconErrorType = async (session, id, answerId, tagName, errorTypeTag) => {
 	let lexicon = [];
 	try {
-		const conn = await connection.connection();
+
 		// Use template literals to avoid concatenation errors and improve readability
-		const dataError = await conn.execute(
+		const dataError = await execute(
 			SQL.evaluationsQueries.getLexiconErrorTypeByTagName(session, id, answerId, tagName, errorTypeTag)
 		);
 		dataError?.[0]?.forEach(item => {
@@ -1113,7 +1152,7 @@ const getLexiconErrorType = async (session, id, answerId, tagName, errorTypeTag)
 			delete lexic.count;
 			delete lexic.total;
 		});
-		conn.release();
+		;
 	} catch (err) {
 		console.error(err);
 	}
@@ -1125,10 +1164,10 @@ const getTruncation = async (session, childAgeInMonths) => {
 	let truncations = [];
 
 	// Connect to the database
-	const conn = await connection.connection();
+
 
 	// Execute SQL query to get target items having phonetic structure
-	const dataTarget = await conn.execute(
+	const dataTarget = await execute(
 		SQL.evaluationsQueries.getTargetItemHavingPhonetic(session, childAgeInMonths)
 	);
 
@@ -1173,14 +1212,13 @@ const getTruncation = async (session, childAgeInMonths) => {
 	});
 
 	// Release the database connection
-	conn.release();
+	;
 
 	// Return the truncations array
 	return truncations;
 };
 
 const getPhoneticContentData = async (session, childAgeInMonths, tagName = '') => {
-	const conn = await connection.connection();
 	let sql = SQL.evaluationsQueries.getTargetItem(session, childAgeInMonths);
 
 	// Change SQL query based on tag name parameter
@@ -1189,34 +1227,27 @@ const getPhoneticContentData = async (session, childAgeInMonths, tagName = '') =
 	} else if (tagName !== '') {
 		sql = SQL.evaluationsQueries.getTargetItemByTag(session, childAgeInMonths, tagName);
 	}
-
 	// Retrieve target items from the database
-	const dataTargetHtml = await conn.execute(sql);
-
+	const dataTargetHtml = await execute(sql);
 	let phonetic_contents_data = [];
-
 	// Loop through target items and parse JSON data, if applicable
 	dataTargetHtml?.[0]?.forEach(item => {
 		if (item.answer_04 != null) {
 			if (item.answer_04.indexOf('data-json') !== -1) {
-				let expression = /data-json=\"([^"]*)\"/;
-				let matches = item.answer_04.match(expression);
+				const matches = item.answer_04.match(/data-json=\"([^"]*)\"/);
 				if (matches.length > 0) {
 					item.json = parseDataJson(matches[1]);
 				}
 			}
 		}
-
 		// Modify phonetic structure and segment properties for certain tag names
 		if (tagName !== '' && tagName !== 'articulation') {
-			item.phonetic_structure = item.phonetic_structure.replace(', ', ',');
+			item.phonetic_structure = item.phonetic_structure.replaceAll(', ', ',');
 			item.segment = item.phonetic_structure.split(',');
 		}
-
 		phonetic_contents_data.push(item);
 	});
-
-	conn.release();
+	;
 	return phonetic_contents_data;
 };
 
@@ -1235,29 +1266,33 @@ const getSyllablesStructure = async (phonetic_contents_data, totalValue) => {
 		count_deaffrication_total = 0,
 		count_addition = 0;
 	phonetic_contents_data.map(item => {
+		let html = ''
 		if (item.answer_04 != null) {
-			let html = item.answer_04;
+			html = item.answer_04;
 			if (item.json) {
-				if (item.json.structures.initial_consonant_removed)
-					count_initial_consonant_removed += item.json.structures.initial_consonant_removed;
-				if (item.json.structures.initial_bonding_removed)
-					count_initial_bonding_removed += item.json.structures.initial_bonding_removed;
-				if (item.json.structures.final_consonant_removed)
-					count_final_consonant_removed += item.json.structures.final_consonant_removed;
-				if (item.json.structures.final_bonding_removed)
-					count_final_bonding_removed += item.json.structures.final_bonding_removed;
-				if (item.json.structures.bonding_reduction)
-					count_bonding_reduction += item.json.structures.bonding_reduction;
-				if (item.json.structures.deaffrication) count_deaffrication += item.json.structures.deaffrication;
-			} else html = item.target_item_html;
-			count_initial_consonant_total += html.match(/letter initial/g)?.length || 0;
-			count_initial_bonding_total += html.match(/bond initial/g)?.length || 0;
-			count_final_consonant_total += html.match(/letter final/g)?.length || 0;
-			count_final_bonding_total += html.match(/bond final/g)?.length || 0;
-			count_bonding_reduction_total += html.match(/bond/g)?.length || 0;
-			count_deaffrication_total += html.match(/affricate/g)?.length || 0;
-			count_addition += html.match(/added/g)?.length || 0;
+				if (item.json.structures?.initial_consonant_removed)
+					count_initial_consonant_removed += item.json.structures?.initial_consonant_removed;
+				if (item.json.structures?.initial_bonding_removed)
+					count_initial_bonding_removed += item.json.structures?.initial_bonding_removed;
+				if (item.json.structures?.final_consonant_removed)
+					count_final_consonant_removed += item.json.structures?.final_consonant_removed;
+				if (item.json.structures?.final_bonding_removed)
+					count_final_bonding_removed += item.json.structures?.final_bonding_removed;
+				if (item.json.structures?.bonding_reduction)
+					count_bonding_reduction += item.json.structures?.bonding_reduction;
+				if (item.json.structures?.deaffrication) count_deaffrication += item.json.structures?.deaffrication;
+			}
+		} else {
+			html = item.target_item_html;
 		}
+		count_initial_consonant_total += html.match(/letter initial/g)?.length || 0;
+		count_initial_bonding_total += html.match(/bond initial/g)?.length || 0;
+		count_final_consonant_total += html.match(/letter final/g)?.length || 0;
+		count_final_bonding_total += html.match(/bond final/g)?.length || 0;
+		count_bonding_reduction_total += html.match(/bond/g)?.length || 0;
+		count_deaffrication_total += html.match(/affricate/g)?.length || 0;
+		count_addition += html.match(/added/g)?.length || 0;
+
 	});
 	return [
 		{
@@ -1316,107 +1351,80 @@ const getConsonantStructures = async phonetic_contents_data => {
 		reduction_on_x: '',
 		all_removed: ''
 	};
-	phonetic_contents_data.map(item => {
-		if (item.answer_04 != null) {
-			let html = item.answer_04;
-			if (item.json) {
-				count_bonds_incorrect += item.json.structures.bonds_at_least_one_incorrect ? 1 : 0;
-				if (item.json.consonants.count_first_replaced) {
-					count_first_replaced += item.json.consonants.count_first_replaced;
-					affections.first_replaced +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+	phonetic_contents_data.forEach(item => {
+		let html = ''
+		if (item["answer_04"] !== null) {
+			html = item["answer_04"];
+
+			if (item.hasOwnProperty("json")) {
+				if (item["json"].structures.bonds_at_least_one_incorrect !== undefined) {
+					count_bonds_incorrect += item["json"].structures.bonds_at_least_one_incorrect ? 1 : 0;
 				}
-				if (item.json.consonants.count_second_replaced) {
-					count_second_replaced += item.json.consonants.count_second_replaced;
-					affections.second_replaced +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.count_first_replaced > 0) {
+					count_first_replaced += item["json"].consonants.count_first_replaced;
+					affections["first_replaced"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.count_third_replaced && item.json.consonants.count_third_replaced > 0) {
-					count_third_replaced += item.json.consonants.count_third_replaced;
-					affections.third_replaced +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.count_second_replaced > 0) {
+					count_second_replaced += item["json"].consonants.count_second_replaced;
+					affections["second_replaced"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.all_replaced_in_bond) {
-					count_all_replaced_in_bond += item.json.consonants.all_replaced ? 1 : 0;
-					affections.all_replaced +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.count_third_replaced > 0) {
+					count_third_replaced += item["json"].consonants.count_third_replaced;
+					affections["third_replaced"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.reduction_on_first) {
-					count_reduction_on_first += item.json.consonants.reduction_on_first ? 1 : 0;
-					affections.reduction_on_first +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.all_replaced_in_bond) {
+					count_all_replaced_in_bond += item["json"].consonants.all_replaced_in_bond ? 1 : 0;
+					affections["all_replaced"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.reduction_on_second) {
-					count_reduction_on_second += item.json.consonants.reduction_on_second ? 1 : 0;
-					affections.reduction_on_second +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.reduction_on_first) {
+					count_reduction_on_first += item["json"].consonants.reduction_on_first ? 1 : 0;
+					affections["reduction_on_first"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.reduction_on_third) {
-					count_reduction_on_third += item.json.consonants.reduction_on_third ? 1 : 0;
-					affections.reduction_on_third +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.reduction_on_second) {
+					count_reduction_on_second += item["json"].consonants.reduction_on_second ? 1 : 0;
+					affections["reduction_on_second"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.reduction_on_x) {
-					count_reduction_on_x += item.json.consonants.reduction_on_x ? 1 : 0;
-					affections.reduction_on_x +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.reduction_on_third) {
+					count_reduction_on_third += item["json"].consonants.reduction_on_third ? 1 : 0;
+					affections["reduction_on_third"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-				if (item.json.consonants.all_removed_in_bond) {
-					count_all_removed_in_bond += item.json.consonants.all_removed_in_bond ? 1 : 0;
-					affections.all_removed +=
-						'<span class="before">' +
-						item.target_item_html +
-						'</span><span class="after">' +
-						item.answer_04 +
-						'</span><br/>';
+
+				if (item["json"].consonants.reduction_on_x) {
+					count_reduction_on_x += item["json"].consonants.reduction_on_x ? 1 : 0;
+					affections["reduction_on_x"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
 				}
-			} else html = item.target_item_html;
-			count_bonds_total += html.match('/bond/g');
-			count_bonds_double += html.match('/double/g');
-			count_bonds_triple += html.match('/triple/g');
+
+				if (item["json"].consonants.all_removed_in_bond) {
+					count_all_removed_in_bond += item["json"].consonants.all_removed_in_bond ? 1 : 0;
+					affections["all_removed"] += `<span class="before">${item["target_item_html"]}</span><span class="after">${item["answer_04"]}</span><br/>`;
+				}
+			}
+		} else {
+			html = item["target_item_html"];
 		}
+
+		count_bonds_total += (html.match(/bond/g) || []).length;
+		count_bonds_double += (html.match(/double/g) || []).length;
+		count_bonds_triple += (html.match(/triple/g) || []).length;
 	});
-	Object.entries(affections).map(([k, v]) => {
-		let value = '<p class="word clearfix">' + v + '</p>';
-		value = value.replace('\n', '');
-		value = value.replace('"', '"');
-		value = value.replace('  ', '');
-		value = value.replace('> <', '><');
-		v = value;
-		return v;
-	});
+	for (let key in affections) {
+		if (affections.hasOwnProperty(key)) {
+			let value = '<p class="word clearfix">' + affections[key] + '</p>';
+			value = value.replaceAll("\n", "");
+			value = value.replaceAll('"', '"');
+			value = value.replaceAll('  ', '');
+			value = value.replaceAll('> <', "><");
+
+			affections[key] = value;
+		}
+	}
 	let count_bonds_correct = count_bonds_total - count_bonds_incorrect;
 	return [
 		{
@@ -1470,16 +1478,17 @@ const getConsonantStructures = async phonetic_contents_data => {
 			affection: affections['all_removed'] != '' ? affections['all_removed'] : '-'
 		}
 	];
+
 };
 const getContextProcesses = async (session, total_for_processes) => {
 	// Establish a database connection
-	const conn = await connection.connection();
+
 
 	// Initialize an empty array for context processes
 	let context_processes = [];
 
 	// Get the extended diagnosis question data for the session
-	const dataExtendQuestion = await conn.execute(
+	const dataExtendQuestion = await execute(
 		SQL.diagnosticsQueries.getDiagnosisExtendedQuestion(session, '02', 'answer_05', 'answer_06', 'answer_07')
 	);
 
@@ -1492,7 +1501,7 @@ const getContextProcesses = async (session, total_for_processes) => {
 	});
 
 	// Release the database connection
-	conn.release();
+	;
 
 	// Return the context process array
 	return context_processes;
@@ -1516,14 +1525,14 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 
 	// Loop through the phonetic content data
 	phonetic_contents_data.map(phoneticContent => {
-		if (phoneticContent.json?.replacements) {
+		if (phoneticContent.json?.replacements && phoneticContent.json?.replacements.length > 0) {
 			// Loop through the replacements in the phonetic content
 			phoneticContent.json.replacements.map(replacement => {
 				// Check if the replacement segment contains 'initial', 'medial', or 'final'
 				if (
-					replacement.segment.indexOf('initial') !== -1 ||
-					replacement.segment.indexOf('medial') !== -1 ||
-					replacement.segment.indexOf('final') !== -1
+					replacement.segment?.indexOf('initial') !== -1 ||
+					replacement.segment?.indexOf('medial') !== -1 ||
+					replacement.segment?.indexOf('final') !== -1
 				) {
 					// Find the index of the sound preference with the same name as the original sound
 					let foundIndex = sound_preferences.findIndex(x => x.name == replacement.original);
@@ -1541,8 +1550,8 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 						// Update the sound preference with the replacement information
 						Object.entries(sound_preferences[foundIndex]).forEach(([k, v]) => {
 							if (
-								replacement.segment.indexOf(k) == -1 &&
-								replacement.replaced.indexOf(v) == -1 &&
+								replacement.segment?.indexOf(k) == -1 &&
+								replacement.replaced?.indexOf(v) == -1 &&
 								k !== 'name'
 							) {
 								sound_preferences[foundIndex][k] = v + (v == '' ? '' : ', ') + replacement.replaced;
@@ -1590,345 +1599,352 @@ async function GetSubstituionsAndSoundPreference(phonetic_contents_data) {
 	return { substitution_processes, sound_preferences };
 }
 
-async function getSubstitutions(phonetic_contents, segments, type) {
-	// Initialize arrays for substitutions and substitution groups
-	let substitutions = [];
-	let substitution_groups = [];
-
-	// Set the class name to 'even'
-	let className = 'even';
-
-	// Get the articulation types
-	const articulation_types = await getArticulationTypes();
-
-	// Loop through the segments
-	segments.map(segment => {
-		// Initialize variables
-		let realized_as = '';
-		let testcase = '';
-		let processData = '';
-		let constancy_consequence = '';
-		let has_all_replaced = true;
-		let has_replacement = false;
-		let has_target_item = false;
-		let replaced_letters = [];
-
-		// Loop through the phonetic contents
-		phonetic_contents.map(phonetic_content => {
-			if (phonetic_content.segment) {
-				// Loop through the segments in the phonetic content
-				phonetic_content.segment.map(phonetic_segment => {
-					if (phonetic_segment == segment.name) {
-						has_target_item = true;
-						has_replacement = false;
-
-						// Loop through the replacements in the phonetic content
-						if (phonetic_content.json?.replacements) {
-							phonetic_content.json.replacements.map(replacement => {
-								if (replacement.segment == segment.name) {
-									has_replacement = true;
-									if (!replaced_letters.includes(replacement.replaced))
-										replaced_letters.push(replacement.replaced);
-									realized_as += '<p>' + replacement.replaced + '</p>';
-									if (replacement.selected) {
-										processData += '<p class="process">';
-										selected_types = replacement.selected.split(',');
-										selected_types.map(type_id => {
-											let foundIndex = articulation_types.findIndex(x => x.id == type_id);
-											processData += `<span data-tooltip title="${articulation_types[foundIndex].name}" data-position="top" data-alignment="center">${articulation_types[foundIndex].short}</span>`;
-										});
-										processData += '</p>';
-									}
-								}
-							});
-						}
-
-						// Add the realized_as and testcase to the variables
-						if (has_replacement) {
-							realized_as += `<p>${segment.letters}</p>`;
-							has_all_replaced = false;
-						}
-						testcase += `<p>${phonetic_content.target_item}</p>`;
+async function getSubstitutions(phoneticContents, segments, type) {
+	const articulationTypes = await getArticulationTypes();
+	const substitutions = {};
+	let classVar = "even";
+	const substitutionGroups = {};
+	for (const segment of segments) {
+	  let realizedAs = "";
+	  let testcase = "";
+	  let process = "";
+	  let constancyConsequence = "";
+	  let hasAllReplaced = true;
+	  let hasReplacement = false;
+	  let hasTargetItem = false;
+	  const replacedLetters = [];
+  
+	  for (const phoneticContent of phoneticContents) {
+		if (phoneticContent.segment) {
+		  for (const phoneticSegment of phoneticContent.segment) {
+			if (phoneticSegment === segment.name) {
+			  hasTargetItem = true;
+			  hasReplacement = false;
+			  if (phoneticContent.json && phoneticContent.json.replacements) {
+				for (const replacement of phoneticContent.json.replacements) {
+				  if (replacement.segment === segment.name) {
+					hasReplacement = true;
+					if (!replacedLetters.includes(replacement.replaced)) {
+					  replacedLetters.push(replacement.replaced);
 					}
-				});
+  
+					realizedAs += '<p>' + replacement.replaced + '</p>';
+  
+					if (replacement.selected) {
+					  process += '<p class="process">';
+					  const selectedTypes = replacement.selected.split(",");
+					  selectedTypes.map(type_id => {
+						const articulationType = articulationTypes.find(type => type.id == type_id)
+						process += '<span data-tooltip class="has-tip" title="' + articulationType?.name + '" data-position="top" data-alignment="center">';
+						process += articulationType?.short;
+						process += '</span>';
+					});
+  
+					  process += '</p>';
+					}
+				  }
+				}
+			  }
+  
+			  if (!hasReplacement) {
+				realizedAs += '<p>' + segment.letters + '</p>';
+				hasAllReplaced = false;
+			  }
+  
+			  testcase += '<p>' + phoneticContent.target_item + '</p>';
 			}
-		});
-
-		if (has_target_item) {
-			processData = processData.replace('"', '"');
-
-			// Find the index of the substitution group with the same name as the segment letters
-			let index = substitution_groups.findIndex(x => x.name == segment.letters);
-
-			// If the substitution group does not exist, create it
-			if (index == -1) {
-				substitution_groups.push({
-					name: segment.letters,
-					substitutions: [],
-					replaced_letters: [],
-					has_replacements: false,
-					constancy: false,
-					consequence: false
-				});
-			} else {
-				// Add the substitution to the substitution group
-				substitution_groups[index]?.substitutions.push({
-					name: segment.name,
-					has_replacement: replaced_letters.length > 0 ? true : false,
-					has_all_correct: replaced_letters.length == 0 ? true : false,
-					has_all_replaced: has_all_replaced,
-					replaced_letters: replaced_letters,
-					columns: [realized_as, testcase, processData, constancy_consequence]
-				});
-			}
+		  }
 		}
-	});
-
-	// Loop through the substitution groups
-	substitution_groups.forEach(v => {
-		let count_all_correct = 0;
-		let count_all_replaced = 0;
-		// Loop through the substitutions in the substitution group
-		v.substitutions.map(value => {
-			if (value.has_all_correct) {
-				count_all_correct++;
-			}
-			if (value.has_all_replaced) {
-				count_all_replaced++;
-			}
-			if (value.has_replacement) {
-				v.has_replacements = value.has_replacement;
-			}
-			if (value.replaced_letters.length) {
-				value.replaced_letters.map(letter => {
-					if (!v.replaced_letters.includes(letter)) v.replaced_letters.push(letter);
-				});
-			}
-		});
-
-		// Set the constancy property of the substitution group
-		if (count_all_replaced == v.substitutions.length || count_all_correct == v.substitutions.length) {
-			v.constancy = true;
+	  }
+  
+	  if (hasTargetItem) {
+		process = process.replace(/"/g, '\"');
+  
+		const substitution = {
+		  name: segment.name,
+		  columns: [realizedAs, testcase, process, constancyConsequence],
+		  replaced_letters: replacedLetters,
+		  has_replacement: replacedLetters.length > 0 ? true : false,
+		  has_all_correct: replacedLetters.length === 0 ? true : false,
+		  has_all_replaced: hasAllReplaced,
+		};
+  
+		if (!substitutionGroups[segment.letters]) {
+		  substitutionGroups[segment.letters] = {
+			substitutions: {},
+			replaced_letters: [],
+			has_replacements: false,
+			constancy: false,
+			consequence: false,
+		  };
 		}
-
-		if (v.replaced_letters.length == 1) {
-			v.constancy = true;
+  
+		substitutionGroups[segment.letters].substitutions[segment.name] = substitution;
+	  }
+	}
+  
+	for (const key in substitutionGroups) {
+	  let countAllCorrect = 0;
+	  let countAllReplaced = 0;
+  
+	  for (const segment in substitutionGroups[key].substitutions) {
+		const substitution = substitutionGroups[key].substitutions[segment];
+  
+		if (substitution.has_all_correct) {
+		  countAllCorrect++;
 		}
-	});
-
-	// Loop through the substitution groups
-	substitution_groups.forEach(group => {
-		if (group.has_remplacements) className = className == 'even' ? 'ood' : 'even';
-
-		// Loop through the substitutions in the substitution group
-		group.substitutions.map((v, index) => {
-			if (index == 0)
-				v.columns[3] =
-					'<p>' +
-					(group.constancy ? 'konstant' : 'inkonstant') +
-					' ' +
-					(group.consequence ? 'konsequent' : 'inkonsequent') +
-					'</p>';
-
-			v.class = className;
-
-			if (type == 'vowels') {
-				delete v.columns[2];
-			}
-
-			// Add the substitution to the substitutions array
-			return substitutions.push({
-				name: v.name,
-				columns: v.columns,
-				class: v.class
-			});
-		});
-	});
-
-	// Return the substitutions
-	return substitutions;
-}
+  
+		if (substitution.has_all_replaced) {
+		  countAllReplaced++;
+		}
+  
+		if (substitution.has_replacement) {
+		  substitutionGroups[key].has_replacements = substitution.has_replacement;
+		}
+  
+		for (const letter of substitution.replaced_letters) {
+		  if (!substitutionGroups[key].replaced_letters.includes(letter)) {
+			substitutionGroups[key].replaced_letters.push(letter);
+		  }
+		}
+	  }
+  
+	  if (countAllReplaced === Object.keys(substitutionGroups[key].substitutions).length || countAllCorrect === Object.keys(substitutionGroups[key].substitutions).length) {
+		substitutionGroups[key].constancy = true;
+	  }
+  
+	  if (substitutionGroups[key].replaced_letters.length === 1) {
+		substitutionGroups[key].consequence = true;
+	  }
+	}
+  
+	for (const key in substitutionGroups) {
+	  const group = substitutionGroups[key];
+  
+	  if (group.has_replacements) {
+		classVar = classVar === "even" ? "odd" : "even";
+		let index = 0;
+  
+		for (const segment in group.substitutions) {
+		  const substitution = group.substitutions[segment];
+  
+		  if (index === 0) {
+			substitution.columns[3] = '<p>' + (group.constancy ? 'konstant' : 'inkonstant') + ' ' + (group.consequence ? 'konsequent' : 'inkonsequent') + '</p>';
+		  }
+  
+		  substitution.class = classVar;
+  
+		  if (type === "vowels") {
+			substitution.columns.splice(2, 1);
+		  }
+  
+		  substitutions[segment] = substitution;
+  
+		  index++;
+		}
+	  }
+	}
+	return Object.values(substitutions);
+  }
+  
 
 // Refactored function: getScoreForTest2
 async function getScoreForTest2(scores, session, totalValue, childAgeInMonths, needs_extended_analysis) {
-	// Initialize variables
-	let score_append_text = '<br/>';
-	let count_syllables_stressed = 0,
-		count_syllables = 0,
-		count_syllables_removed_stressed = 0,
-		count_syllables_removed_unstressed = 0;
+	try {
+		// Initialize variables
+		let score_append_text = '<br/>';
+		let count_syllables_stressed = 0,
+			count_syllables = 0,
+			count_syllables_removed_stressed = 0,
+			count_syllables_removed_unstressed = 0;
 
-	// Establish database connection
-	const conn = await connection.connection();
+		// Fetch and update phonetic deformity results
+		let result_phonetic_deformity = await getWordPhonetic(score_append_text, '02', session, 'answer_08');
+		score_append_text = result_phonetic_deformity.score_append_text;
 
-	// Fetch and update phonetic deformity results
-	let result_phonetic_deformity = await getWordPhonetic(score_append_text, '02', session, 'answer_08');
-	score_append_text = result_phonetic_deformity.score_append_text;
+		// Fetch and store accentuation change results
+		let result_accentuation_change = await getWordPhonetic(score_append_text, '02', session, 'answer_09');
 
-	// Fetch and store accentuation change results
-	let result_accentuation_change = await getWordPhonetic(score_append_text, '02', session, 'answer_09');
+		// Push phonetic deformity results to scores
+		scores.push({
+			scoreName: 'Phonetik',
+			type: 'message',
+			visible: result_accentuation_change.data.length > 0 ? 'yes' : 'no',
+			label: 'label_phonetic_deformity',
+			append_text: score_append_text
+		});
 
-	// Push phonetic deformity results to scores
-	scores.push({
-		scoreName: 'Phonetik',
-		type: 'message',
-		visible: result_accentuation_change.data.length > 0 ? 'yes' : 'no',
-		label: 'label_phonetic_deformity',
-		append_text: score_append_text
-	});
+		// Push extended analysis recommendation to scores
+		scores.push({
+			scoreName: 'Empfehlung zur Detailauswertung',
+			type: 'message',
+			visible: 'yes',
+			label: needs_extended_analysis
+				? 'label_do_extended_analysis_phonetic'
+				: 'label_no_need_for_extended_analysis_phonetic',
+			class: needs_extended_analysis ? 'alert' : 'success'
+		});
 
-	// Push extended analysis recommendation to scores
-	scores.push({
-		scoreName: 'Empfehlung zur Detailauswertung',
-		type: 'message',
-		visible: 'yes',
-		label: needs_extended_analysis
-			? 'label_do_extended_analysis_phonetic'
-			: 'label_no_need_for_extended_analysis_phonetic',
-		class: needs_extended_analysis ? 'alert' : 'success'
-	});
+		// Fetch not evaluable results
+		let result_not_evaluable = await getWordPhonetic(score_append_text, '02', session, 'answer_11');
+		let total_for_processes = totalValue - result_not_evaluable.data.length;
 
-	// Fetch not evaluable results
-	let result_not_evaluable = await getWordPhonetic(score_append_text, '02', session, 'answer_11');
-	let total_for_processes = totalValue - result_not_evaluable.data.length;
-
-	// Check if diagnostic extension exists
-	let questionIds = await conn.execute(SQL.diagnosticsQueries.getDiagnosticExtendsIds(2, session, childAgeInMonths));
-	let hasDiagnosticExtension = false;
-	if (questionIds?.[0]?.[0]?.answer_ids && questionIds?.[0]?.[0]?.answer_ids.length > 0) {
-		hasDiagnosticExtension = true;
-	}
-
-	// Fetch phonetic contents
-	let phonetic_contents = await conn.execute(
-		SQL.diagnosticsQueries.getDiagnosisContent(
-			2,
-			session,
-			childAgeInMonths,
-			questionIds?.[0]?.[0]?.answer_ids,
-			hasDiagnosticExtension
-		)
-	);
-
-	// Count diagnostic content attributes
-	let count_diagnostic_contents = phonetic_contents[0].length;
-	phonetic_contents[0].forEach(item => {
-		let html = item.target_item_html;
-		if (html.indexOf('stressed') !== -1) count_syllables_stressed++;
-		if (item.json) {
-			if (item.json.syllables.count_removed_stressed)
-				count_syllables_removed_stressed += item.json.syllables.count_removed_stressed;
-			if (item.json.syllables.count_removed_unstressed)
-				count_syllables_removed_unstressed += item.json.syllables.count_removed_unstressed;
+		// Check if diagnostic extension exists
+		let questionIds = await execute(SQL.diagnosticsQueries.getDiagnosticExtendsIds(2, session, childAgeInMonths));
+		let hasDiagnosticExtension = false;
+		if (questionIds?.[0]?.[0]?.answer_ids && questionIds?.[0]?.[0]?.answer_ids.length > 0) {
+			hasDiagnosticExtension = true;
 		}
-		const matches = html.match(/syllable/g);
-		if (matches != null) count_syllables += matches.length;
-	});
 
-	// Fetch data sum
-	const dataSum = await conn.execute(
-		SQL.evaluationsQueries.getDiagnosisResultDetails(session, '02', 'answer_09', 'incorrect')
-	);
-	count_accentuation = +dataSum[0][0]?.count_accentuation;
+		// Fetch phonetic contents
+		let phonetic_contents = await execute(
+			SQL.diagnosticsQueries.getDiagnosisContent(
+				2,
+				session,
+				childAgeInMonths,
+				questionIds?.[0]?.[0]?.answer_ids,
+				hasDiagnosticExtension
+			)
+		);
 
-	// Fetch various phonetic content data
-	let phonetic_content = await getPhoneticContentData(session, childAgeInMonths);
-	let phonetic_contents_segment = await getPhoneticContentData(session, childAgeInMonths, 'Segment');
-	let segments = await getSegmentsForConsonants();
-	let phonetic_contents_vokal = await getPhoneticContentData(session, childAgeInMonths, 'Vokal');
-	let segmentsvowels = await getSegmentsForVowels();
-	let phonetic_contents_Articulation = await getPhoneticContentData(session, childAgeInMonths, 'articulation');
-	let resultPhoneticProcesses = await GetSubstituionsAndSoundPreference(phonetic_contents_Articulation);
+		// Count diagnostic content attributes
+		let count_diagnostic_contents = phonetic_contents[0].length;
+		phonetic_contents[0].forEach(item => {
+			let html = item.target_item_html;
+			if (html.indexOf('stressed') !== -1) count_syllables_stressed++;
+			if (item.json) {
+				if (item.json.syllables.count_removed_stressed)
+					count_syllables_removed_stressed += item.json.syllables.count_removed_stressed;
+				if (item.json.syllables.count_removed_unstressed)
+					count_syllables_removed_unstressed += item.json.syllables.count_removed_unstressed;
+			}
+			const matches = html.match(/syllable/g);
+			if (matches != null) count_syllables += matches.length;
+		});
 
-	// Push results to scores
-	scores.push({
-		scoreName: 'Ergebnisübersicht',
-		type: 'accordion',
-		accordion: {
-			'Lexikon: Nomen': {
-				head: ['label_error_type', 'label_error_count', 'label_error_distribution'],
-				values: await getLexiconErrorType(session, '02', 'answer_02', 'Nomen', 'Nomen')
-			},
-			'Lexikon: Verben': {
-				head: ['label_error_type', 'label_error_count', 'label_error_distribution'],
-				values: await getLexiconErrorType(session, '02', 'answer_02', 'Verb', 'Verben')
-			},
-			'Aussprache: Kontextprozesse': {
-				head: ['label_context_processes', 'label_amount_possibilities'],
-				values: await getContextProcesses(session, total_for_processes)
-			},
-			'Aussprache: Veränderung der Wortstruktur und Wortbetonung': {
-				head: ['label_error_type', 'label_amount_possibilities'],
-				values: [
-					{
-						name: 'Auslassung betonter Silben',
-						value: count_syllables_removed_stressed + '/' + count_syllables_stressed
-					},
-					{
-						name: 'Auslassung unbetonter Silben',
-						value: count_syllables_removed_unstressed + '/' + count_syllables
-					},
-					{ name: 'Betonungsveränderungen', value: count_accentuation + '/' + count_diagnostic_contents }
-				]
-			},
-			'Aussprache: Trunkierung von Mehrsilbern durch Silbenauslassung': {
-				head: ['label_stress_pattern', 'label_target', 'label_realized_as'],
-				class: 'truncations',
-				values: await getTruncation(session, childAgeInMonths)
-			},
-			'Aussprache: Silbenstrukturprozesse': {
-				head: ['label_error_type', 'label_amount_possibilities'],
-				values: await getSyllablesStructure(phonetic_content, totalValue)
-			},
-			'Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)':
+		// Fetch data sum
+		const dataSum = await execute(
+			SQL.evaluationsQueries.getDiagnosisResultDetails(session, '02', 'answer_09', 'incorrect')
+		);
+        console.log(dataSum[0])
+		// Calculate accentuation count
+		const count_accentuation = dataSum[0]?.[0]?.count_accentuation;
+
+		// Fetch various phonetic content data
+		let phonetic_content = await getPhoneticContentData(session, childAgeInMonths);
+		let phonetic_contents_segment = await getPhoneticContentData(session, childAgeInMonths, 'Segment');
+		let segments = await getSegmentsForConsonants();
+		let phonetic_contents_vokal = await getPhoneticContentData(session, childAgeInMonths, 'Vokal');
+		let segmentsvowels = await getSegmentsForVowels();
+		let phonetic_contents_Articulation = await getPhoneticContentData(session, childAgeInMonths, 'articulation');
+		let resultPhoneticProcesses = await GetSubstituionsAndSoundPreference(phonetic_contents_Articulation);
+
+		// Await all necessary promises
+		await Promise.all([
+			phonetic_content,
+			phonetic_contents_segment,
+			segments,
+			phonetic_contents_vokal,
+			segmentsvowels,
+			phonetic_contents_Articulation,
+			resultPhoneticProcesses
+		]);
+
+		// Push results to scores
+		scores.push({
+			scoreName: 'Ergebnisübersicht',
+			type: 'accordion',
+			accordion: {
+				'Lexikon: Nomen': {
+					head: ['label_error_type', 'label_error_count', 'label_error_distribution'],
+					values: await getLexiconErrorType(session, '02', 'answer_02', 'Nomen', 'Nomen')
+				},
+				'Lexikon: Verben': {
+					head: ['label_error_type', 'label_error_count', 'label_error_distribution'],
+					values: await getLexiconErrorType(session, '02', 'answer_02', 'Verb', 'Verben')
+				},
+				'Aussprache: Kontextprozesse': {
+					head: ['label_context_processes', 'label_amount_possibilities'],
+					values: await getContextProcesses(session, total_for_processes)
+				},
+				'Aussprache: Veränderung der Wortstruktur und Wortbetonung': {
+					head: ['label_error_type', 'label_amount_possibilities'],
+					values: [
+						{
+							name: 'Auslassung betonter Silben',
+							value: count_syllables_removed_stressed + '/' + count_syllables_stressed
+						},
+						{
+							name: 'Auslassung unbetonter Silben',
+							value: count_syllables_removed_unstressed + '/' + count_syllables
+						},
+						{ name: 'Betonungsveränderungen', value: count_accentuation + '/' + count_diagnostic_contents }
+					]
+				},
+				'Aussprache: Trunkierung von Mehrsilbern durch Silbenauslassung': {
+					head: ['label_stress_pattern', 'label_target', 'label_realized_as'],
+					class: 'truncations',
+					values: await getTruncation(session, childAgeInMonths)
+				},
+				'Aussprache: Silbenstrukturprozesse': {
+					head: ['label_error_type', 'label_amount_possibilities'],
+					values: await getSyllablesStructure(phonetic_content, totalValue)
+				},
+				'Aussprache: Genauere Darstellung der Veränderungen bei Konsonantenverbindungen und Affrikaten (initial und final)':
 				{
 					head: ['label_error_type', 'label_amount_possibilities', 'label_affected'],
 					values: await getConsonantStructures(phonetic_content)
 				},
-			'Aussprache: Analyse der Substitutionsprozesse bei Konsonanten': {
-				head: [
-					'label_segment',
-					'label_realized_as',
-					'label_test      case',
-					'label_process',
-					'label_constancy_consequence'
-				],
-				class: 'substitutions',
-				values: await getSubstitutions(phonetic_contents_segment, segments, 'consonants')
-			},
-			'Aussprache: Substitution bei Vokalen': {
-				head: ['label_segment', 'label_realized_as', 'label_testcase', 'label_constancy_consequence'],
-				class: 'substitutions',
-				values: await getSubstitutions(phonetic_contents_vokal, segmentsvowels, 'vowels')
-			},
-			'Aussprache: Übersicht über Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen': {
-				head: ['label_process', 'label_affected', 'label_count'],
-				class: 'substitution',
-				values: resultPhoneticProcesses.substitution_processes
-			},
-			'Aussprache: Lautpräferenz und funktionale Belastung': {
-				head: ['label_sound_stands_for', 'label_initial', 'label_medial', 'label_final'],
-				values: resultPhoneticProcesses.sound_preferences
-			},
-			'Aussprache: Phonetische Realisierung / Fehlbildungen': {
-				head: ['label_nr', 'label_word_phonetic_deformity'],
-				values: result_phonetic_deformity.word_phonetic
-			},
-			'Aussprache: Betonungsveränderungen': {
-				head: ['label_nr', 'label_word_accentuation_change'],
-				values: result_accentuation_change.word_phonetic
-			},
-			'Nicht auswertbare Wörter': { head: ['label_nr', 'label_word'], values: result_not_evaluable.word_phonetic }
-		}
-	});
+				'Aussprache: Analyse der Substitutionsprozesse bei Konsonanten': {
+					head: [
+						'label_segment',
+						'label_realized_as',
+						'label_testcase',
+						'label_process',
+						'label_constancy_consequence'
+					],
+					class: 'substitutions',
+					values: await getSubstitutions(phonetic_contents_segment, segments, 'consonants')
+				},
+				'Aussprache: Substitution bei Vokalen': {
+					head: ['label_segment', 'label_realized_as', 'label_testcase', 'label_constancy_consequence'],
+					class: 'substitutions',
+					values: await getSubstitutions(phonetic_contents_vokal, segmentsvowels, 'vowels')
+				},
+				'Aussprache: Übersicht über Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen': {
+					head: ['label_process', 'label_affected', 'label_count'],
+					class: 'substitution',
+					values: resultPhoneticProcesses.substitution_processes
+				},
+				'Aussprache: Lautpräferenz und funktionale Belastung': {
+					head: ['label_sound_stands_for', 'label_initial', 'label_medial', 'label_final'],
+					values: resultPhoneticProcesses.sound_preferences
+				},
+				'Aussprache: Phonetische Realisierung / Fehlbildungen': {
+					head: ['label_nr', 'label_word_phonetic_deformity'],
+					values: result_phonetic_deformity.word_phonetic
+				},
+				'Aussprache: Betonungsveränderungen': {
+					head: ['label_nr', 'label_word_accentuation_change'],
+					values: result_accentuation_change.word_phonetic
+				},
+				'Nicht auswertbare Wörter': { head: ['label_nr', 'label_word'], values: result_not_evaluable.word_phonetic }
+			}
+		});
 
-	// Release connection
-	conn.release();
-
-	// Return scores
-	return scores;
+		return scores;
+	} catch (error) {
+		console.error('Error in getScoreForTest2:', error);
+		return scores;
+	}
 }
-
+const resolvePromisesSeq = async (tasks) => {
+	const results = [];
+	for (const task of tasks) {
+		results.push(await task);
+	}
+	return results;
+};
 module.exports = {
 	getAnalyses,
 	setAnalysesResult,
@@ -1936,5 +1952,6 @@ module.exports = {
 	setDiagnosticResultDetail,
 	getArticulationTypes,
 	getLexiconErrorTypes,
-	getDiagnosisContentGrammars
+	getDiagnosisContentGrammars,
+	setDiagnosisContentGrammars
 };

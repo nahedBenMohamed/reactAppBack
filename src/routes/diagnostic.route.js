@@ -28,5 +28,7 @@ diagnosticRouter
 	.patch('/sessions/:id/:session', diagnosticController.updateDiagnosticSession)
 	.get('/sessions/initial/details', diagnosticController.createNewSession)
 	.get('/sessions/content/:diagnosticId', diagnosticController.getDiagnosticContent);
+	diagnosticRouter.get('/diagnostic-content/:id', diagnosticController.getDiagnosticContentByIdContent)
+	diagnosticRouter.get('/diagnostic/:id', diagnosticController.getDiagnosticForEvaluation)
 
 module.exports = diagnosticRouter;

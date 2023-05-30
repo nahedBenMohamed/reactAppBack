@@ -1,11 +1,11 @@
-const { connection } = require('../providers');
+const { execute } = require('../providers/db');
 const { SQL } = require('../../config');
 
 module.exports = {
 	createRecord: async function (body) {
 		try {
-			const conn = await connection.connection();
-			let data = await conn.execute(
+			
+			let data = await execute(
 				SQL.recordQueries.createRecord(
 					body.session,
 					body.diagnostic_content,
@@ -14,7 +14,7 @@ module.exports = {
 					body.duration_in_seconds
 				)
 			);
-			conn.release();
+			;
 			return data[0];
 		} catch (err) {
 			throw new Error(`Error creating record: ${err.message}`);
@@ -22,9 +22,9 @@ module.exports = {
 	},
 	removeRecord: async function (id) {
 		try {
-			const conn = await connection.connection();
-			let data = await conn.execute(SQL.recordQueries.removeRecord(id));
-			conn.release();
+			
+			let data = await execute(SQL.recordQueries.removeRecord(id));
+			;
 			return data[0];
 		} catch (err) {
 			throw new Error(`Error removing record: ${err.message}`);
@@ -32,9 +32,9 @@ module.exports = {
 	},
 	getRecords: async function (id, diagnostic_content) {
 		try {
-			const conn = await connection.connection();
-			let data = await conn.execute(SQL.recordQueries.getRecords(id, diagnostic_content));
-			conn.release();
+			
+			let data = await execute(SQL.recordQueries.getRecords(id, diagnostic_content));
+			;
 			return data[0];
 		} catch (err) {
 			throw new Error(`Error getting records: ${err.message}`);

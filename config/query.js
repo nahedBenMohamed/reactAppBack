@@ -41,8 +41,10 @@ module.exports = {
 
 		getDiagnosisDetails: (diagnosisId, childAgeInMonths, sessionStartedStatus) =>
 			`SELECT diagnostic.*,
-			(SELECT COUNT(id) FROM diagnostic_content WHERE diagnostic=diagnostic.id  AND ${sessionStartedStatus === 'training' ? " training='yes'" : " training='no'"
-			}${childAgeInMonths ? ' AND age_min<=' + childAgeInMonths + ' AND age_max>= ' + childAgeInMonths : ' '
+			(SELECT COUNT(id) FROM diagnostic_content WHERE diagnostic=diagnostic.id  AND ${
+				sessionStartedStatus === 'training' ? " training='yes'" : " training='no'"
+			}${
+				childAgeInMonths ? ' AND age_min<=' + childAgeInMonths + ' AND age_max>= ' + childAgeInMonths : ' '
 			} ) as diagnostic_content_length,
 
 			(SELECT GROUP_CONCAT(diagnostic_image.file) FROM diagnostic_image WHERE diagnostic_image.diagnostic = diagnostic.id) as images
@@ -176,17 +178,19 @@ module.exports = {
 		insetANewExtendedResult: (session, contentId, diagnosticId, body) => {
 			let setters = '',
 				answer = '';
-
-			Object.keys(body).forEach((x, i) => {
-				setters += `${x}`;
-				answer += `${body[x]}`;
-				if (Object.keys(body).length - 1 > i) {
+			// change this to remove sql syntax error split each answer_ids with "incorrect or correct value"
+			const keys = Object.keys(body)[0].split(',');
+			keys.forEach((x, i) => {
+				setters += `${x.trim()}`;
+				// change this to get the corresponding value and enclose it in double quotes
+				answer += `"${body[Object.keys(body)[0]].split(',')[i].trim()}"`;
+				if (keys.length - 1 > i) {
 					setters += ',';
 					answer += ',';
 				}
 			});
 
-			return `INSERT INTO diagnostic_result_detail_0${diagnosticId} (session,diagnostic_content,${setters}) VALUES ('${session}','${contentId}','${answer}')`;
+			return `INSERT INTO diagnostic_result_detail_0${diagnosticId} (session,diagnostic_content,${setters}) VALUES ('${session}','${contentId}',${answer})`;
 		},
 		updateExtendedResult: (session, contentId, diagnosticId, body) => {
 			let setter = '';
@@ -256,14 +260,74 @@ module.exports = {
 			(SELECT GROUP_CONCAT(diagnostic_content_image.file SEPARATOR ',') FROM diagnostic_content_image
 			 WHERE diagnostic_content_image.diagnostic_content = diagnostic_content.id) as image
 			 FROM diagnostic_content
-			 ${hasDiagnosticExtension
-					? `LEFT JOIN (SELECT * FROM diagnostic_result_detail_0${id} WHERE session='${session}') diagnostic_result_detail_0${id}  ON diagnostic_content.id = diagnostic_result_detail_0${id} .diagnostic_content`
-					: ''
+			 ${
+					hasDiagnosticExtension
+						? `LEFT JOIN (SELECT * FROM diagnostic_result_detail_0${id} WHERE session='${session}') diagnostic_result_detail_0${id}  ON diagnostic_content.id = diagnostic_result_detail_0${id} .diagnostic_content`
+						: ''
 				}
 			 JOIN diagnostic_session ON  diagnostic_session.session="${session}"  
 			 WHERE diagnostic_content.diagnostic=${id}  AND
 			 (CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
 			  AND diagnostic_content.age_min<=${childAgeInMonths} 
+			 AND diagnostic_content.age_max>=${childAgeInMonths}
+			 ORDER BY diagnostic_content.id ; `;
+			return sql;
+		},
+
+		getDiagnosisContentForEval: (session, content, childAgeInMonths) => {
+			let sql = `SELECT diagnostic_content.*,
+			(
+				SELECT answer
+				FROM diagnostic_result
+				where session = "${session}"
+					AND diagnostic_result.diagnostic_content = diagnostic_content.id
+			) as selected_answer
+		FROM diagnostic_content where diagnostic_content.diagnostic = ${content} AND diagnostic_content.training="no" AND diagnostic_content.age_min<=${childAgeInMonths}
+		AND diagnostic_content.age_max>=${childAgeInMonths}; `;
+			return sql;
+		},
+
+		getDiagnosisContentByIdContent: (
+			contentId,
+			id,
+			session,
+			childAgeInMonths,
+			questionIDS,
+			hasDiagnosticExtension
+		) => {
+			let extendQueries = '';
+			if (questionIDS?.length > 0) {
+				extendQueries = 'JSON_OBJECT(';
+				questionIDS.split(',').forEach((question, index) => {
+					extendQueries += `'${question}',(select ${question}   from  diagnostic_result_detail_0${id}  where  diagnostic_session.session="${session}" and 
+					 diagnostic_result_detail_0${id}.diagnostic_content = diagnostic_content.id and diagnostic_result_detail_0${id}.session="${session}"  )`;
+					if (index < questionIDS.split(',').length - 1) extendQueries += ',';
+				});
+				extendQueries += ') as extendedResult,';
+			}
+
+			let sql = `SELECT diagnostic_content.*,
+			(SELECT answer FROM diagnostic_result where session="${session}"  AND diagnostic_result.diagnostic_content=diagnostic_content.id) as selected_answer,
+			(SELECT notes FROM diagnostic_result where session="${session}" AND diagnostic_result.diagnostic_content=diagnostic_content.id) as currentSlide_note,
+			(SELECT GROUP_CONCAT(diagnostic_extended.question_id SEPARATOR ',') FROM diagnostic_extended WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic) as question_ids,
+			(SELECT GROUP_CONCAT(diagnostic_extended.type SEPARATOR ',') FROM diagnostic_extended WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic) as question_types,
+			(SELECT GROUP_CONCAT(diagnostic_extended.answer_id SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic) as answer_ids,
+			(SELECT GROUP_CONCAT(diagnostic_extended.hide_in_test SEPARATOR ',') FROM diagnostic_extended  WHERE diagnostic_extended.diagnostic = diagnostic_content.diagnostic) as hide_in_tests,
+			${extendQueries}
+			${questionIDS},
+			(SELECT GROUP_CONCAT(diagnostic_content_image.file SEPARATOR ',') FROM diagnostic_content_image
+			 WHERE diagnostic_content_image.diagnostic_content = diagnostic_content.id) as image
+			 FROM diagnostic_content
+			 ${
+					hasDiagnosticExtension
+						? `LEFT JOIN (SELECT * FROM diagnostic_result_detail_0${id} WHERE session='${session}') diagnostic_result_detail_0${id}  ON diagnostic_content.id = diagnostic_result_detail_0${id} .diagnostic_content`
+						: ''
+				}
+			 JOIN diagnostic_session ON  diagnostic_session.session="${session}"  
+			 WHERE diagnostic_content.diagnostic=${id}  AND
+			 (CASE WHEN diagnostic_session.started="training" THEN diagnostic_content.training="yes" ELSE diagnostic_content.training="no" END)
+			 AND diagnostic_content.id=${contentId}  
+			  AND diagnostic_content.age_min<=${childAgeInMonths}
 			 AND diagnostic_content.age_max>=${childAgeInMonths}; `;
 			return sql;
 		},
@@ -299,6 +363,17 @@ module.exports = {
 			childAgeInMonths
 		) => `SELECT *,(SELECT GROUP_CONCAT(dga.diagnostic_result_extended_answer) FROM diagnostic_result_grammar_answer dga LEFT JOIN diagnostic_result_extended_answers drea ON dga.diagnostic_result_extended_answer = drea.id WHERE dga.diagnostic_content_grammar = diagnostic_content_grammar.id AND dga.session='${session}' AND drea.id IS NOT NULL) AS selected_answers 
 	FROM diagnostic_content_grammar WHERE diagnostic_content_grammar.age_min<=${childAgeInMonths} AND diagnostic_content_grammar.age_max>=${childAgeInMonths} ORDER BY id ASC`,
+		setDiagnosisGrammarWitSession: (session, diagnostic_content_grammar_id, diagnostic_result_extended_answer) => `
+		INSERT INTO diagnostic_result_grammar_answer (session, diagnostic_content_grammar, diagnostic_result_extended_answer) 
+		VALUES ('${session}', '${diagnostic_content_grammar_id}', '${diagnostic_result_extended_answer}')`,
+		removeDiagnosisGrammarWitSession: (
+			session,
+			diagnostic_content_grammar_id,
+			diagnostic_result_extended_answer
+		) => `
+    DELETE FROM diagnostic_result_grammar_answer 
+    WHERE session='${session}' AND diagnostic_content_grammar='${diagnostic_content_grammar_id}' AND diagnostic_result_extended_answer='${diagnostic_result_extended_answer}'`,
+
 		getDiagnosisGrammar: childAgeInMonths =>
 			`SELECT * FROM diagnostic_content_grammar WHERE diagnostic_content_grammar.age_min<=${childAgeInMonths} AND diagnostic_content_grammar.age_max>=${childAgeInMonths} ORDER BY id ASC`,
 		updateDiagnosisResult: (diagnostic, child) =>
@@ -389,6 +464,8 @@ module.exports = {
 		WHERE diagnostic_content_extended.diagnostic="${diagnosticId}" AND training='no'`,
 		getExtendedAnswers: session =>
 			`SELECT * FROM diagnostic_result_extended_answers WHERE session='${session}' ORDER BY belonging_id ASC`,
+		getResultExtendedAnswers: (session, tagName) =>
+			`SELECT ${tagName} FROM diagnostic_result_extended_answers WHERE session='${session}' ORDER BY belonging_id ASC`,
 		getRawValueByTag: (session, tagName) =>
 			`SELECT SUM(IF(diagnostic_result.answer = 'correct', 1, 0)) AS raw_value FROM diagnostic_result 
 			LEFT JOIN diagnostic_content_tag ON diagnostic_result.diagnostic_content = diagnostic_content_tag.diagnostic_content

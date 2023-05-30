@@ -40,11 +40,8 @@ app.use(
 	documentation.swaggerUi.setup(documentation.swaggerDocument)
 );
 
-/*cron.schedule('0 0 1 * *', () => {
-    cronService.permanentDeleteRecordsCron();
-});*/
-cron.schedule('*/5 * * * *', () => {
-	cronService.permanentDeleteRecordsCron();
+cron.schedule('0 0 1 * *', async () => {
+	await cronService.permanentDeleteRecordsCron();
 });
 
 const http = require('http').createServer(app);

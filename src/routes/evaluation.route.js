@@ -9,7 +9,7 @@ evaluationRouter
 
 evaluationRouter.route('/result').get(evaluationController.getAnalysesResultScores);
 evaluationRouter.route('/result/grammar/test').get(evaluationController.getDiagnosisContentGrammars);
-
+evaluationRouter.route('/grammar/update').post(evaluationController.setDiagnosisContentGrammars);
 // need to be changed
 evaluationRouter.route('/phonetics').patch(evaluationController.setDiagnosticResultDetail);
 
