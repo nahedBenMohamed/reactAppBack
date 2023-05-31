@@ -1,6 +1,6 @@
-
 const multer = require('multer');
 const fs = require('fs');
+const maxFileSize = 5242880
 const storage = multer.diskStorage({
     destination(req, file, cb) {
         const path = `files/uploads/${req.body.session}/`;
@@ -15,8 +15,22 @@ const storage = multer.diskStorage({
     },
 });
 const upload = multer({
-    storage, limits: {
-        fileSize: 524288
-    }
+    storage,
+    limits: {
+        fileSize: maxFileSize
+    },
+    fileFilter(req, file, cb) {
+        const fileSize = parseInt(req.headers["content-length"])
+        try {
+            if (fileSize <= maxFileSize) {
+                cb(null, true);
+            } else {
+                throw ('File size exceeds the limit.');
+            }
+        }
+        catch (error) {
+            console.log("error", error)
+        }
+    },
 });
 module.exports = { upload };
