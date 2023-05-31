@@ -78,7 +78,7 @@ module.exports = {
 
 		if (Validator.isEmpty(data.sub)) {
 			errors.sub = 'this field is required';
-		} else if (data.sub?.split('|')[0] === 'auth' || !/[a-z0-9]+$/.test(data.sub?.split('|')[1])) {
+		} else if (!/[a-z0-9]+$/.test(data.sub?.split('|')[1]) || data.sub?.split('|')[0] === 'auth') {
 			errors.sub = 'Invalid input...';
 		}
 
