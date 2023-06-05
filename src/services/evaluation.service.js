@@ -1324,96 +1324,112 @@ const getConsonantStructures = async phonetic_contents_data => {
 	};
 	phonetic_contents_data.forEach(item => {
 		let html = '';
-		if (item['answer_04'] !== null) {
-			html = item['answer_04'];
-
-			if (item.hasOwnProperty('json')) {
-				if (item['json'].structures.bonds_at_least_one_incorrect !== undefined) {
-					count_bonds_incorrect += item['json'].structures.bonds_at_least_one_incorrect ? 1 : 0;
+		if (item.answer_04 != null) {
+			html = item.answer_04;
+			if (item.json) {
+				count_bonds_incorrect += item.json.structures.bonds_at_least_one_incorrect ? 1 : 0;
+				if (item.json.structures.bonds_at_least_one_incorrect !== undefined) {
+					count_bonds_incorrect += item.json.structures.bonds_at_least_one_incorrect ? 1 : 0;
 				}
-
-				if (item['json'].consonants.count_first_replaced > 0) {
-					count_first_replaced += item['json'].consonants.count_first_replaced;
-					affections[
-						'first_replaced'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.count_first_replaced) {
+					count_first_replaced += item.json.consonants.count_first_replaced;
+					affections.first_replaced +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.count_second_replaced > 0) {
-					count_second_replaced += item['json'].consonants.count_second_replaced;
-					affections[
-						'second_replaced'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.count_second_replaced) {
+					count_second_replaced += item.json.consonants.count_second_replaced;
+					affections.second_replaced +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.count_third_replaced > 0) {
-					count_third_replaced += item['json'].consonants.count_third_replaced;
-					affections[
-						'third_replaced'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.count_third_replaced && item.json.consonants.count_third_replaced > 0) {
+					count_third_replaced += item.json.consonants.count_third_replaced;
+					affections.third_replaced +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.all_replaced_in_bond) {
-					count_all_replaced_in_bond += item['json'].consonants.all_replaced_in_bond ? 1 : 0;
-					affections[
-						'all_replaced'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.all_replaced_in_bond) {
+					count_all_replaced_in_bond += item.json.consonants.all_replaced ? 1 : 0;
+					affections.all_replaced +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.reduction_on_first) {
-					count_reduction_on_first += item['json'].consonants.reduction_on_first ? 1 : 0;
-					affections[
-						'reduction_on_first'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.reduction_on_first) {
+					count_reduction_on_first += item.json.consonants.reduction_on_first ? 1 : 0;
+					affections.reduction_on_first +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.reduction_on_second) {
-					count_reduction_on_second += item['json'].consonants.reduction_on_second ? 1 : 0;
-					affections[
-						'reduction_on_second'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.reduction_on_second) {
+					count_reduction_on_second += item.json.consonants.reduction_on_second ? 1 : 0;
+					affections.reduction_on_second +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.reduction_on_third) {
-					count_reduction_on_third += item['json'].consonants.reduction_on_third ? 1 : 0;
-					affections[
-						'reduction_on_third'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.reduction_on_third) {
+					count_reduction_on_third += item.json.consonants.reduction_on_third ? 1 : 0;
+					affections.reduction_on_third +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.reduction_on_x) {
-					count_reduction_on_x += item['json'].consonants.reduction_on_x ? 1 : 0;
-					affections[
-						'reduction_on_x'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.reduction_on_x) {
+					count_reduction_on_x += item.json.consonants.reduction_on_x ? 1 : 0;
+					affections.reduction_on_x +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
-
-				if (item['json'].consonants.all_removed_in_bond) {
-					count_all_removed_in_bond += item['json'].consonants.all_removed_in_bond ? 1 : 0;
-					affections[
-						'all_removed'
-					] += `<span class="before">${item['target_item_html']}</span><span class="after">${item['answer_04']}</span><br/>`;
+				if (item.json.consonants.all_removed_in_bond) {
+					count_all_removed_in_bond += item.json.consonants.all_removed_in_bond ? 1 : 0;
+					affections.all_removed +=
+						'<span class="before">' +
+						item.target_item_html +
+						'</span><span class="after">' +
+						item.answer_04 +
+						'</span><br/>';
 				}
 			}
 		} else {
-			html = item['target_item_html'];
-		}
+			html = item.target_item_html
+		};
+		count_bonds_total += html.match(/bond/g)?.length || 0;
+		count_bonds_double += html.match(/double/g)?.length || 0;
+		count_bonds_triple += html.match(/triple/g)?.length || 0;
 
-		count_bonds_total += (html.match(/bond/g) || []).length;
-		count_bonds_double += (html.match(/double/g) || []).length;
-		count_bonds_triple += (html.match(/triple/g) || []).length;
 	});
-	for (let key in affections) {
-		if (affections.hasOwnProperty(key)) {
-			let value = '<p class="word clearfix">' + affections[key] + '</p>';
-			value = value.replaceAll('\n', '');
-			value = value.replaceAll('"', '"');
-			value = value.replaceAll('  ', '');
-			value = value.replaceAll('> <', '><');
-
-			affections[key] = value;
-		}
-	}
+	Object.entries(affections).map(([k, v]) => {
+		let value = '<p class="word clearfix">' + v + '</p>';
+		value = value.replace('\n', '');
+		value = value.replace('"', '"');
+		value = value.replace('  ', '');
+		value = value.replace('> <', '><');
+		v = value;
+		return v;
+	});
 	let count_bonds_correct = count_bonds_total - count_bonds_incorrect;
 	return [
 		{
@@ -1605,7 +1621,7 @@ async function getSubstitutions(phoneticContents, segments, type) {
 					if (phoneticSegment === segment.name) {
 						hasTargetItem = true;
 						hasReplacement = false;
-						if (phoneticContent.json && phoneticContent.json.replacements) {
+						if (phoneticContent?.json?.replacements) {
 							for (const replacement of phoneticContent.json.replacements) {
 								if (replacement.segment === segment.name) {
 									hasReplacement = true;

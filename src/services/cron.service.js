@@ -13,45 +13,38 @@ const path = require('path');
 
 // These changes don't affect the functionality of the code but improve its readability, consistency, and performance.
 
-
 const permanentDeleteRecordsCron = async () => {
-    const root = path.join(__dirname, '../../files/uploads/');
-    const now = Date.now();
-    const sixMonthsDuration = now - 100;
+	const root = path.join(__dirname, '../../files/uploads/');
+	const now = Date.now();
+	const sixMonthsDuration = now - 100;
 
-    try {
-        fs.readdir(root, (err, directories) => {
-            if (err) throw err;
+	try {
+		const directories = await fs.promises.readdir(root);
 
-            directories.forEach((directory) => {
-                const directoryPath = path.join(root, directory);
-                fs.readdir(directoryPath, (err, files) => {
-                    if (err) throw err;
+		for (const directory of directories) {
+			const directoryPath = path.join(root, directory);
+			const files = await fs.promises.readdir(directoryPath);
 
-                    files.forEach(async (file) => {
-                        try {
-                            const filePath = path.join(directoryPath, file);
-                            const stats = await fs.promises.stat(filePath);
-                            const modifiedAt = stats.mtime.getTime();
+			for (const file of files) {
+				try {
+					const filePath = path.join(directoryPath, file);
+					const stats = await fs.promises.stat(filePath);
+					const modifiedAt = stats.mtime.getTime();
 
-                            if (modifiedAt < sixMonthsDuration) {
-                                await fs.promises.unlink(filePath);
-                                
-                                await execute(SQL.recordQueries.removeRecords(file));
-                                ;
-                            }
-                        } catch (error) {
-                            console.error(error);
-                        }
-                    });
-                });
-            });
-        });
-    } catch (error) {
-        console.error(error);
-    }
+					if (modifiedAt < sixMonthsDuration) {
+						await fs.promises.unlink(filePath);
+						await execute(SQL.recordQueries.removeRecords(file));
+					}
+				} catch (error) {
+					console.error(error);
+				}
+			}
+		}
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 module.exports = {
-    permanentDeleteRecordsCron,
+	permanentDeleteRecordsCron
 };

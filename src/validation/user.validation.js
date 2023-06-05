@@ -2,6 +2,15 @@ const Validator = require('validator');
 
 const isEmpty = require('../helpers').isEmpty;
 
+// Separate functions for sub validation
+function isValidSubFormat(sub) {
+	return sub === 'auth' || 'auth0'; // Specify the desired format for the sub value
+}
+function isValidSubValue(sub) {
+	const regex = /^[a-z0-9]+$/;
+	return regex.test(sub);
+}
+
 module.exports = {
 	validateGetChildByUserId: (req, res, next) => {
 		const errors = {};
@@ -70,26 +79,31 @@ module.exports = {
 			next();
 		}
 	},
+	// Validation function
 	validateParamsSUB: (req, res, next) => {
 		const errors = {};
 		const data = req.params;
 
-		data.sub = !isEmpty(data.sub) ? data.sub : '';
+		data.sub = data.sub || '';
 
-		if (Validator.isEmpty(data.sub)) {
-			errors.sub = 'this field is required';
-		} else if (!/[a-z0-9]+$/.test(data.sub?.split('|')[1]) || data.sub?.split('|')[0] === 'auth') {
-			errors.sub = 'Invalid input...';
+		if (!data.sub) {
+			errors.sub = 'This field is required';
+		} else {
+			const subSplit = data.sub.split('|');
+			console.log(isValidSubFormat(subSplit[0]), isValidSubValue(subSplit[1]), subSplit.length);
+
+			if (subSplit.length !== 2 || !isValidSubFormat(subSplit[0]) || !isValidSubValue(subSplit[1])) {
+				errors.sub = 'Invalid input...';
+			}
 		}
-
-		if (!isEmpty(errors)) {
+		if (Object.keys(errors).length !== 0) {
 			return res.status(400).json({
 				error: errors,
 				status: 400,
 				data: null
 			});
-		} else {
-			next();
 		}
+
+		next();
 	}
 };
