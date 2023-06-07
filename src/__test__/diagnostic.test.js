@@ -42,7 +42,7 @@ describe("GET /diagnostics", () => {
         diagnosticId, 
         childId
       })
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(201)
     })
   })
   describe("given session, diagnosticId, ", () => {
@@ -60,3 +60,4 @@ describe("GET /diagnostics", () => {
     })
   })
 })
+module.exports = appTest;
