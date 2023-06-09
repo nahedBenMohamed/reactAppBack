@@ -1,2622 +1,0 @@
-ﬂi
-HC__laragon_reactAppBack_src_helpers_accordionFormatter_js_1_29_A_122_datC
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.js ($"s2_1*ãh
-s2_1
-<synthetic> (E
-C
-
-__unknown_file (	
-%global"__id**
-
-%env"
-globalC
-A
- (
-lexicon_nouns"__id**
-
-data"
-Lexikon: NomenM
-K
-
-__unknown_file (	
-%expr_0"__id**
-
-data"
-Lexikon: NomenF
-D
- (
-
-lexicon_nouns"
-head"__id**
-	
-%expr_0"
-headK
-I
-
-__unknown_file (
-	%sc-P_7_0"__id**
-
-%env"
-
-%scope-P_7M
-K
-
-__unknown_file (	
-%expr_1"__id**
-
-data"
-Lexikon: NomenK
-I
-
-__unknown_file (
-	%sc-P_7_1"__id**
-
-%env"
-
-%scope-P_7x"v
- (!
-
-%funcRes_0*
-
-	%sc-P_7_1"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-	
-%expr_1"
-values2
-
-nameA
-?
- (
-
-lexicon_nouns"
-values"__id*
-
-
-%funcRes_0D
-B
- (
-lexicon_verbs"__id**
-
-data"
-Lexikon: VerbenN
-L
-
-__unknown_file (	
-%expr_2"__id**
-
-data"
-Lexikon: VerbenF
-D
- (
-
-lexicon_verbs"
-head"__id**
-	
-%expr_2"
-headK
-I
-
-__unknown_file (
-	%sc-P_7_2"__id**
-
-%env"
-
-%scope-P_7N
-L
-
-__unknown_file (	
-%expr_3"__id**
-
-data"
-Lexikon: VerbenK
-I
-
-__unknown_file (
-	%sc-P_7_3"__id**
-
-%env"
-
-%scope-P_7x"v
- (!
-
-%funcRes_1*
-
-	%sc-P_7_3"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-	
-%expr_3"
-values2
-
-nameA
-?
- (
-
-lexicon_verbs"
-values"__id*
-
-
-%funcRes_1]
-[
-
- 
-(
-phonetic_context_processes"__id*+)*'
-
-data"
-Aussprache: KontextprozesseZ
-X
-
-__unknown_file (	
-%expr_4"__id*+)*'
-
-data"
-Aussprache: KontextprozesseS
-Q
- ( &
-
-phonetic_context_processes"
-head"__id**
-	
-%expr_4"
-headK
-I
-
-__unknown_file (
-	%sc-P_7_4"__id**
-
-%env"
-
-%scope-P_7Z
-X
-
-__unknown_file (	
-%expr_5"__id*+)*'
-
-data"
-Aussprache: KontextprozesseK
-I
-
-__unknown_file (
-	%sc-P_7_5"__id**
-
-%env"
-
-%scope-P_7~"|
-% (.
-
-%funcRes_2*
-
-	%sc-P_7_5"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-	
-%expr_5"
-values2
-
-questionIdN
-L
- ("(
-
-phonetic_context_processes"
-values"__id*
-
-
-%funcRes_2Å
-
- ($!
-phonetic_wordstructure_stressed"__id*JH*F
-
-data"<
-:Aussprache: Ver√§nderung der Wortstruktur und Wortbetonungy
-w
-
-__unknown_file (	
-%expr_6"__id*JH*F
-
-data"<
-:Aussprache: Ver√§nderung der Wortstruktur und WortbetonungX
-V
- (%+
-!
-phonetic_wordstructure_stressed"
-head"__id**
-	
-%expr_6"
-headK
-I
-
-__unknown_file (
-	%sc-P_7_6"__id**
-
-%env"
-
-%scope-P_7y
-w
-
-__unknown_file (	
-%expr_7"__id*JH*F
-
-data"<
-:Aussprache: Ver√§nderung der Wortstruktur und WortbetonungK
-I
-
-__unknown_file (
-	%sc-P_7_7"__id**
-
-%env"
-
-%scope-P_7l"j
-* (3
-
-%funcRes_3*
-
-	%sc-P_7_7"
-	dataValue2
-	
-%global2
-
-
-%env2*
-	
-%expr_7"
-valuesS
-Q
- ('-
-!
-phonetic_wordstructure_stressed"
-values"__id*
-
-
-%funcRes_3z
-x
- (
-phonetic_truncations"__id*NL*J
-
-data"@
->Aussprache: Trunkierung von Mehrsilbern durch Silbenauslassung}
-{
-
-__unknown_file (	
-%expr_8"__id*NL*J
-
-data"@
->Aussprache: Trunkierung von Mehrsilbern durch SilbenauslassungM
-K
- ( 
-
-phonetic_truncations"
-head"__id**
-	
-%expr_8"
-head}
-{
-
-__unknown_file (	
-%expr_9"__id*NL*J
-
-data"@
->Aussprache: Trunkierung von Mehrsilbern durch SilbenauslassungO
-M
- (!
-
-phonetic_truncations"
-class"__id**
-	
-%expr_9"
-classK
-I
-
-__unknown_file (
-	%sc-P_7_8"__id**
-
-%env"
-
-%scope-P_7~
-|
-
-__unknown_file (
-
-%expr_10"__id*NL*J
-
-data"@
->Aussprache: Trunkierung von Mehrsilbern durch SilbenauslassungK
-I
-
-__unknown_file (
-	%sc-P_7_9"__id**
-
-%env"
-
-%scope-P_7y"w
- ((
-
-%funcRes_4*
-
-	%sc-P_7_9"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-
-
-%expr_10"
-values2
-
-nameH
-F
- ("
-
-phonetic_truncations"
-values"__id*
-
-
-%funcRes_4f
-d
- (!
-phonetic_syllable_structures"__id*20*.
-
-data"$
-"Aussprache: Silbenstrukturprozesseb
-`
-
-__unknown_file (
-
-%expr_11"__id*20*.
-
-data"$
-"Aussprache: SilbenstrukturprozesseV
-T
- ("(
-
-phonetic_syllable_structures"
-head"__id**
-
-
-%expr_11"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_10"__id**
-
-%env"
-
-%scope-P_7b
-`
-
-__unknown_file (
-
-%expr_12"__id*20*.
-
-data"$
-"Aussprache: SilbenstrukturprozesseL
-J
-
-__unknown_file (
-
-%sc-P_7_11"__id**
-
-%env"
-
-%scope-P_7n"l
-' (0
-
-%funcRes_5*
-
-
-%sc-P_7_11"
-	dataValue2
-	
-%global2
-
-
-%env2*
-
-
-%expr_12"
-valuesP
-N
- ($*
-
-phonetic_syllable_structures"
-values"__id*
-
-
-%funcRes_5∫
-∑
- ("
-phonetic_consonant_structures"__id*ÉÄ*~
-
-data"t
-rAussprache: Genauere Darstellung der Ver√§nderungen bei Konsonantenverbindungen und Affrikaten (initial und final)µ
-≤
-
-__unknown_file (
-
-%expr_13"__id*ÉÄ*~
-
-data"t
-rAussprache: Genauere Darstellung der Ver√§nderungen bei Konsonantenverbindungen und Affrikaten (initial und final)W
-U
- (#)
-
-phonetic_consonant_structures"
-head"__id**
-
-
-%expr_13"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_12"__id**
-
-%env"
-
-%scope-P_7µ
-≤
-
-__unknown_file (
-
-%expr_14"__id*ÉÄ*~
-
-data"t
-rAussprache: Genauere Darstellung der Ver√§nderungen bei Konsonantenverbindungen und Affrikaten (initial und final)L
-J
-
-__unknown_file (
-
-%sc-P_7_13"__id**
-
-%env"
-
-%scope-P_7n"l
-( (1
-
-%funcRes_6*
-
-
-%sc-P_7_13"
-	dataValue2
-	
-%global2
-
-
-%env2*
-
-
-%expr_14"
-valuesQ
-O
- (%+
-
-phonetic_consonant_structures"
-values"__id*
-
-
-%funcRes_6á
-Ñ
- (&#
-!phonetic_substitutions_consonants"__id*MK*I
-
-data"?
-=Aussprache: Analyse der Substitutionsprozesse bei Konsonanten}
-{
-
-__unknown_file (
-
-%expr_15"__id*MK*I
-
-data"?
-=Aussprache: Analyse der Substitutionsprozesse bei Konsonanten[
-Y
-   ('-
-#
-!phonetic_substitutions_consonants"
-head"__id**
-
-
-%expr_15"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_14"__id**
-
-%env"
-
-%scope-P_7}
-{
-
-__unknown_file (
-
-%expr_16"__id*MK*I
-
-data"?
-=Aussprache: Analyse der Substitutionsprozesse bei KonsonantenL
-J
-
-__unknown_file (
-
-%sc-P_7_15"__id**
-
-%env"
-
-%scope-P_7z"x
-!, !(5
-
-%funcRes_7*
-
-
-%sc-P_7_15"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-
-
-%expr_16"
-values2
-
-nameU
-S
-! !()/
-#
-!phonetic_substitutions_consonants"
-values"__id*
-
-
-%funcRes_7i
-g
-# #("
-phonetic_substitutions_vowels"__id*42*0
-
-data"&
-$Aussprache: Substitution bei Vokalend
-b
-
-__unknown_file (
-
-%expr_17"__id*42*0
-
-data"&
-$Aussprache: Substitution bei VokalenW
-U
-$ $(#)
-
-phonetic_substitutions_vowels"
-head"__id**
-
-
-%expr_17"
-headd
-b
-
-__unknown_file (
-
-%expr_18"__id*42*0
-
-data"&
-$Aussprache: Substitution bei VokalenY
-W
-% %($*
-
-phonetic_substitutions_vowels"
-class"__id**
-
-
-%expr_18"
-classL
-J
-
-__unknown_file (
-
-%sc-P_7_16"__id**
-
-%env"
-
-%scope-P_7d
-b
-
-__unknown_file (
-
-%expr_19"__id*42*0
-
-data"&
-$Aussprache: Substitution bei VokalenL
-J
-
-__unknown_file (
-
-%sc-P_7_17"__id**
-
-%env"
-
-%scope-P_7z"x
-&( &(1
-
-%funcRes_8*
-
-
-%sc-P_7_17"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-
-
-%expr_19"
-values2
-
-nameQ
-O
-& &(%+
-
-phonetic_substitutions_vowels"
-values"__id*
-
-
-%funcRes_8Ø
-¨
-( (($!
-phonetic_substitution_processes"__id*wu*s
-
-data"i
-gAussprache: √úbersicht √ºber Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen®
-•
-
-__unknown_file (
-
-%expr_20"__id*wu*s
-
-data"i
-gAussprache: √úbersicht √ºber Substitutionsprozesse bei Einzelkonsonanten und in KonsonantenverbindungenY
-W
-) )(%+
-!
-phonetic_substitution_processes"
-head"__id**
-
-
-%expr_20"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_18"__id**
-
-%env"
-
-%scope-P_7®
-•
-
-__unknown_file (
-
-%expr_21"__id*wu*s
-
-data"i
-gAussprache: √úbersicht √ºber Substitutionsprozesse bei Einzelkonsonanten und in KonsonantenverbindungenL
-J
-
-__unknown_file (
-
-%sc-P_7_19"__id**
-
-%env"
-
-%scope-P_7n"l
-** *(3
-
-%funcRes_9*
-
-
-%sc-P_7_19"
-	dataValue2
-	
-%global2
-
-
-%env2*
-
-
-%expr_21"
-valuesS
-Q
-* *('-
-!
-phonetic_substitution_processes"
-values"__id*
-
-
-%funcRes_9u
-s
-, ,(
-phonetic_sound_preference"__id*DB*@
-
-data"6
-4Aussprache: Lautpr√§ferenz und funktionale Belastungt
-r
-
-__unknown_file (
-
-%expr_22"__id*DB*@
-
-data"6
-4Aussprache: Lautpr√§ferenz und funktionale BelastungS
-Q
-- -(%
-
-phonetic_sound_preference"
-head"__id**
-
-
-%expr_22"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_20"__id**
-
-%env"
-
-%scope-P_7t
-r
-
-__unknown_file (
-
-%expr_23"__id*DB*@
-
-data"6
-4Aussprache: Lautpr√§ferenz und funktionale BelastungL
-J
-
-__unknown_file (
-
-%sc-P_7_21"__id**
-
-%env"
-
-%scope-P_7o"m
-.$ .(-
-%funcRes_10*
-
-
-%sc-P_7_21"
-	dataValue2
-	
-%global2
-
-
-%env2*
-
-
-%expr_23"
-valuesN
-L
-. .(!'
-
-phonetic_sound_preference"
-values"__id*
-
-%funcRes_10n
-l
-0 0(
-phonetic_deformity"__id*DB*@
-
-data"6
-4Aussprache: Phonetische Realisierung / Fehlbildungent
-r
-
-__unknown_file (
-
-%expr_24"__id*DB*@
-
-data"6
-4Aussprache: Phonetische Realisierung / FehlbildungenL
-J
-1 1(
-
-phonetic_deformity"
-head"__id**
-
-
-%expr_24"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_22"__id**
-
-%env"
-
-%scope-P_7t
-r
-
-__unknown_file (
-
-%expr_25"__id*DB*@
-
-data"6
-4Aussprache: Phonetische Realisierung / FehlbildungenL
-J
-
-__unknown_file (
-
-%sc-P_7_23"__id**
-
-%env"
-
-%scope-P_7{"y
-2 2(&
-%funcRes_11*
-
-
-%sc-P_7_23"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-
-
-%expr_25"
-values2
-
-nameG
-E
-2 2( 
-
-phonetic_deformity"
-values"__id*
-
-%funcRes_11^
-\
-4 4(
-accentuation_change"__id*31*/
-
-data"%
-#Aussprache: Betonungsver√§nderungenc
-a
-
-__unknown_file (
-
-%expr_26"__id*31*/
-
-data"%
-#Aussprache: Betonungsver√§nderungenM
-K
-5 5(
-
-accentuation_change"
-head"__id**
-
-
-%expr_26"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_24"__id**
-
-%env"
-
-%scope-P_7c
-a
-
-__unknown_file (
-
-%expr_27"__id*31*/
-
-data"%
-#Aussprache: Betonungsver√§nderungenL
-J
-
-__unknown_file (
-
-%sc-P_7_25"__id**
-
-%env"
-
-%scope-P_7{"y
-6 6('
-%funcRes_12*
-
-
-%sc-P_7_25"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-
-
-%expr_27"
-values2
-
-nameH
-F
-6 6(!
-
-accentuation_change"
-values"__id*
-
-%funcRes_12N
-L
-8 8(
-not_evaluable"__id*)'*%
-
-data"
-Nicht auswertbare W√∂rterY
-W
-
-__unknown_file (
-
-%expr_28"__id*)'*%
-
-data"
-Nicht auswertbare W√∂rterG
-E
-9 9(
-
-not_evaluable"
-head"__id**
-
-
-%expr_28"
-headL
-J
-
-__unknown_file (
-
-%sc-P_7_26"__id**
-
-%env"
-
-%scope-P_7Y
-W
-
-__unknown_file (
-
-%expr_29"__id*)'*%
-
-data"
-Nicht auswertbare W√∂rterL
-J
-
-__unknown_file (
-
-%sc-P_7_27"__id**
-
-%env"
-
-%scope-P_7{"y
-: :(!
-%funcRes_13*
-
-
-%sc-P_7_27"
-	dataLabel2
-	
-%global2
-
-
-%env2*
-
-
-%expr_29"
-values2
-
-nameB
-@
-: :(
-
-not_evaluable"
-values"__id*
-
-%funcRes_13)'
-< K(
-	%object_0Object"ObjectP
-N
-= =(!'
-
-	%object_0Object"
-Lexikon: Nomen"__id*
-
-lexicon_nounsQ
-O
-> >("(
-
-	%object_0Object"
-Lexikon: Verben"__id*
-
-lexicon_verbsj
-h
-? ?(;4
-
-	%object_0Object"
-Aussprache: Kontextprozesse"__id* 
-
-phonetic_context_processesè
-å
-@ @(^S
-
-	%object_0Object"<
-:Aussprache: Ver√§nderung der Wortstruktur und Wortbetonung"__id*%#
-!
-phonetic_wordstructure_stressedà
-Ö
-A A(XW
-
-	%object_0Object"@
->Aussprache: Trunkierung von Mehrsilbern durch Silbenauslassung"__id*
-
-phonetic_truncationss
-q
-B B(D;
-
-	%object_0Object"$
-"Aussprache: Silbenstrukturprozesse"__id*" 
-
-phonetic_syllable_structures«
-ƒ
-	C C(îã
-
-	%object_0Object"t
-rAussprache: Genauere Darstellung der Ver√§nderungen bei Konsonantenverbindungen und Affrikaten (initial und final)"__id*#!
-
-phonetic_consonant_structuresî
-ë
-D D(dV
-
-	%object_0Object"?
-=Aussprache: Analyse der Substitutionsprozesse bei Konsonanten"__id*'%
-#
-!phonetic_substitutions_consonantsv
-t
-E E(G=
-
-	%object_0Object"&
-$Aussprache: Substitution bei Vokalen"__id*#!
-
-phonetic_substitutions_vowelsæ
-ª
-	F F(äÄ
-
-	%object_0Object"i
-gAussprache: √úbersicht √ºber Substitutionsprozesse bei Einzelkonsonanten und in Konsonantenverbindungen"__id*%#
-!
-phonetic_substitution_processesÉ
-Ä
-G G(RM
-
-	%object_0Object"6
-4Aussprache: Lautpr√§ferenz und funktionale Belastung"__id*
-
-phonetic_sound_preference{
-y
-H H(LM
-
-	%object_0Object"6
-4Aussprache: Phonetische Realisierung / Fehlbildungen"__id*
-
-phonetic_deformityk
-i
-I I(;<
-
-	%object_0Object"%
-#Aussprache: Betonungsver√§nderungen"__id*
-
-accentuation_change[
-Y
-J J(+2
-
-	%object_0Object"
-Nicht auswertbare W√∂rter"__id*
-
-not_evaluable"!
-< K(
-
-	%object_0Object:"
-
-__unknown_file (
-%env:
- ( 
-dataB 
-IC__laragon_reactAppBack_src_helpers_accordionFormatter_js_83_29_A_124_keyC
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.jsS S(%"s5_1*ú
-s5_1
-<synthetic> (W
-U
-
-__unknown_file (
-%sc-A_123_ite_0"__id* *
-
-%env"
-%scope-A_123_iteT
-R
-
-__unknown_file (	
-%expr_0"__id*%#*!
-
-%sc-A_123_ite_0"
-
-itemValuesW
-U
-
-__unknown_file (
-%sc-A_123_ite_1"__id* *
-
-%env"
-%scope-A_123_iteN
-L
-
-__unknown_file (	
-%expr_1"__id**
-
-%sc-A_123_ite_1"
-item:
-8
-T T(
-%var_0"__mapGet*
-	
-%expr_1*	
-
-keyI
-G
-T T(	
-%void_0"__mapSet*
-	
-%expr_0*	
-
-key*
-
-
-%var_0"
-
-__unknown_file ( :"
-
-__unknown_file (
-%env:
-S S( 
-keyB À9
-IC__laragon_reactAppBack_src_helpers_accordionFormatter_js_80_15_A_123_iteC
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.jsP P("s4_1*ë
-s4_1
-<synthetic> (I
-G
-
-__unknown_file (
-%globalBuiltins"__initializeGlobal* 86
-
-__unknown_file (
-%scope-A_123_ite"ObjectX
-V
-
-__unknown_file (
-
-%env"
-%scope-A_123_ite"__id*
-
-%scope-A_123_ite<
-:
-P P(
-
-%scope-A_123_ite"
-item"__id*
-
-
-itema
-_
-
-__unknown_file (
-%sc-FD_1_dataLabel_0"__id*%#*!
-
-%env"
-%scope-FD_1_dataLabelO
-M
-
-__unknown_file (	
-%expr_0"__id* *
-
-%scope-A_123_ite"
-itemK
-I
-Q Q(
-%fieldAccess_0"__id*%#*!
-
-%sc-FD_1_dataLabel_0"
-labelE
-C
-Q Q(
-%var_0"__mapGet*
-	
-%expr_0*
-
-%fieldAccess_0(
-&
-Q Q(
-name"__id*
-
-
-%var_0)'
-R R(
-	%object_0Object"ObjectO
-M
-R R("
-
-%scope-A_123_ite"
-
-itemValues"__id*
-
-	%object_0ObjectP
-N
-
-__unknown_file (	
-%expr_1"__id*!*
-
-%globalBuiltins"
-ObjectF
-D
-
-__unknown_file (	
-%expr_2"__id**
-	
-%expr_1"
-keysl"j
-S	 S(
-
-%methRes_0*
-	
-%expr_1"
-keys2
-	
-%expr_12
-
-
-%env2 *
-
-%scope-A_123_ite"
-itemå
-â
-
-__unknown_file (	
-%func_0"__declareFunction*OMK
-IC__laragon_reactAppBack_src_helpers_accordionFormatter_js_83_29_A_124_keyX
-V
-
-__unknown_file (
-
-%env"
-%scope-A_123_ite"__id*
-
-%scope-A_123_itefd
-
-__unknown_file (/
-%functionPrototype_0%SonarFunctionPrototype"%SonarFunctionPrototypew
-u
-
-__unknown_file (	
-%void_0"
-__setProto*
-	
-%func_0*31
-/
-%functionPrototype_0%SonarFunctionPrototypeL
-J
-
-__unknown_file (	
-%expr_3"__id**
-
-
-%methRes_0"	
-forEachb"`
-S S(
-
-%methRes_1*
-
-
-%methRes_0"	
-forEach2
-
-
-%methRes_02
-
-
-%env2
-	
-%func_0U
-S
-
-__unknown_file (	
-%expr_4"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValues*
-s4_2
-s4_3*—
-s4_2
-<synthetic> (N
-L
-
-__unknown_file (	
-%expr_5"__id**
-
-%globalBuiltins"
-JSONU
-S
-
-__unknown_file (	
-%expr_6"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesK
-I
-
-__unknown_file (	
-%expr_7"__id**
-	
-%expr_5"
-	stringifyj"h
-W W(
-
-%methRes_2*
-	
-%expr_5"
-	stringify2
-	
-%expr_52
-
-
-%env2*
-	
-%expr_6"
-target5
-3
-W W(
-%target~iSc_1"__id*
-
-
-%methRes_2O
-M
-
-__unknown_file (	
-%expr_8"__id* *
-
-%target~iSc_1"	
-replaceh"f
-X X(
-
-%methRes_3*
-
-%target~iSc_1"	
-replace2
-
-%target~iSc_12
-
-
-%env2
-
-2 5
-3
-X X(	
-%target~iSc_1"__id*
-
-
-%methRes_3O
-M
-
-__unknown_file (	
-%expr_9"__id* *
-
-%target~iSc_1"	
-replacek"i
-Y Y(
-
-%methRes_4*
-
-%target~iSc_1"	
-replace2
-
-%target~iSc_12
-
-
-%env2
-"2
-"5
-3
-Y Y(	
-%target~iSc_1"__id*
-
-
-%methRes_4P
-N
-
-__unknown_file (
-
-%expr_10"__id* *
-
-%target~iSc_1"	
-replacei"g
-Z Z(
-
-%methRes_5*
-
-%target~iSc_1"	
-replace2
-
-%target~iSc_12
-
-
-%env2
-  2 5
-3
-Z Z(	
-%target~iSc_1"__id*
-
-
-%methRes_5P
-N
-
-__unknown_file (
-
-%expr_11"__id* *
-
-%target~iSc_1"	
-replacen"l
-[ [(
-
-%methRes_6*
-
-%target~iSc_1"	
-replace2
-
-%target~iSc_12
-
-
-%env2	
-> <2
-><5
-3
-[ [(	
-%target~iSc_1"__id*
-
-
-%methRes_6V
-T
-
-__unknown_file (
-
-%expr_12"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesP
-N
-
-__unknown_file (
-
-%expr_13"__id* *
-
-%target~iSc_1"	
-replacel"j
-\ \(%
-
-%methRes_7*
-
-%target~iSc_1"	
-replace2
-
-%target~iSc_12
-
-
-%env2
-"<2
-<<
-:
-\ \(
-
-
-%expr_12"
-target"__id*
-
-
-%methRes_7V
-T
-
-__unknown_file (
-
-%expr_14"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesV
-T
-
-__unknown_file (
-
-%expr_15"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesJ
-H
-
-__unknown_file (
-
-%expr_16"__id**
-
-
-%expr_15"
-targetK
-I
-
-__unknown_file (
-
-%expr_17"__id**
-
-
-%expr_16"	
-replaceb"`
-]) ](0
-
-%methRes_8*
-
-
-%expr_16"	
-replace2
-
-
-%expr_162
-
-
-%env2
->"2
-><
-:
-] ](
-
-
-%expr_14"
-target"__id*
-
-
-%methRes_8*
-s4_3*É
-s4_3
-<synthetic> (V
-T
-
-__unknown_file (
-
-%expr_18"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValues*
-s4_4
-s4_5*ﬁ
-s4_4
-<synthetic> (O
-M
-
-__unknown_file (
-
-%expr_19"__id**
-
-%globalBuiltins"
-JSONV
-T
-
-__unknown_file (
-
-%expr_20"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesM
-K
-
-__unknown_file (
-
-%expr_21"__id**
-
-
-%expr_19"
-	stringifyr"p
-` `(#
-
-%methRes_9*
-
-
-%expr_19"
-	stringify2
-
-
-%expr_192
-
-
-%env2*
-
-
-%expr_20"
-realized_as:
-8
-` `(
-%realized_as~iSc_2"__id*
-
-
-%methRes_9U
-S
-
-__unknown_file (
-
-%expr_22"__id*%#*!
-
-%realized_as~iSc_2"	
-replaces"q
-a a($
-%methRes_10*!
-
-%realized_as~iSc_2"	
-replace2
-
-%realized_as~iSc_22
-
-
-%env2
-
-2 ;
-9
-a a(
-%realized_as~iSc_2"__id*
-
-%methRes_10U
-S
-
-__unknown_file (
-
-%expr_23"__id*%#*!
-
-%realized_as~iSc_2"	
-replacev"t
-b b($
-%methRes_11*!
-
-%realized_as~iSc_2"	
-replace2
-
-%realized_as~iSc_22
-
-
-%env2
-"2
-";
-9
-b b(
-%realized_as~iSc_2"__id*
-
-%methRes_11U
-S
-
-__unknown_file (
-
-%expr_24"__id*%#*!
-
-%realized_as~iSc_2"	
-replacet"r
-c c($
-%methRes_12*!
-
-%realized_as~iSc_2"	
-replace2
-
-%realized_as~iSc_22
-
-
-%env2
-  2 ;
-9
-c c(
-%realized_as~iSc_2"__id*
-
-%methRes_12U
-S
-
-__unknown_file (
-
-%expr_25"__id*%#*!
-
-%realized_as~iSc_2"	
-replacey"w
-d d($
-%methRes_13*!
-
-%realized_as~iSc_2"	
-replace2
-
-%realized_as~iSc_22
-
-
-%env2	
-> <2
-><;
-9
-d d(
-%realized_as~iSc_2"__id*
-
-%methRes_13V
-T
-
-__unknown_file (
-
-%expr_26"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesU
-S
-
-__unknown_file (
-
-%expr_27"__id*%#*!
-
-%realized_as~iSc_2"	
-replacew"u
-e( e(/
-%methRes_14*!
-
-%realized_as~iSc_2"	
-replace2
-
-%realized_as~iSc_22
-
-
-%env2
-"<2
-<B
-@
-e e(
-
-
-%expr_26"
-realized_as"__id*
-
-%methRes_14V
-T
-
-__unknown_file (
-
-%expr_28"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesV
-T
-
-__unknown_file (
-
-%expr_29"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValuesO
-M
-
-__unknown_file (
-
-%expr_30"__id**
-
-
-%expr_29"
-realized_asK
-I
-
-__unknown_file (
-
-%expr_31"__id**
-
-
-%expr_30"	
-replacec"a
-f3 f(:
-%methRes_15*
-
-
-%expr_30"	
-replace2
-
-
-%expr_302
-
-
-%env2
->"2
->B
-@
-f f(
-
-
-%expr_28"
-realized_as"__id*
-
-%methRes_15*
-s4_5*ß
-s4_5
-<synthetic> (a
-_
-
-__unknown_file (
-%sc-FD_1_dataLabel_1"__id*%#*!
-
-%env"
-%scope-FD_1_dataLabelV
-T
-
-__unknown_file (
-
-%expr_32"__id*&$*"
-
-%sc-FD_1_dataLabel_1"
-values)'
-h h("
-	%object_1Object"ObjectL
-J
-h h( 
-%fieldAccess_1"__id*&$*"
-
-%scope-A_123_ite"
-
-itemValues\
-Z
-h h( 	
-%void_1"__objectAssign* *
-
-	%object_1Object*
-
-%fieldAccess_1V
-T
-h h(	
-%void_2"__mapSet*
-
-
-%expr_32*
-
-
-name*
-
-	%object_1Object"
-
-__unknown_file ( :"
-
-__unknown_file (
-%env:
-P P(
-itemB ®
-MC__laragon_reactAppBack_src_helpers_accordionFormatter_js_78_1_FD_1_dataLabelC
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.jsN	 N("s3_1*Ë
-s3_1
-<synthetic> (I
-G
-
-__unknown_file (
-%globalBuiltins"__initializeGlobal* =;
-
-__unknown_file (
-%scope-FD_1_dataLabel"Objectb
-`
-
-__unknown_file (!
-
-%env"
-%scope-FD_1_dataLabel"__id*
-
-%scope-FD_1_dataLabelC
-A
-N N("
-
-%scope-FD_1_dataLabel"
-label"__id*	
-
-label<
-:
-O O( 
-%fieldAccess_0"__id**
-
-data"
-lengthJ
-H
-O O( 
-%binOpRes_0"__js_greater_than*
-
-%fieldAccess_0*2 *
-s3_2
-s3_3*°
-s3_2
-<synthetic> ()'
-O$ O(&
-	%object_0Object"ObjectO
-M
-
-__unknown_file (
-%unionThenElse_0"__id*
-
-	%object_0Object*
-s3_4*≈
-s3_3
-<synthetic> (20
-O) O(+
-%array_0ArraySymbol"ArraySymbolT
-R
-
-__unknown_file (
-%arrayCons_0"__id* *
-
-%globalBuiltins"
-ArrayW
-U
-
-__unknown_file (
-%fieldAccess_1"__id*!*
-
-%arrayCons_0"
-	prototypef
-d
-
-__unknown_file (	
-%void_0"
-__setProto*
-
-%array_0ArraySymbol*
-
-%fieldAccess_1S
-Q
-
-__unknown_file (
-%unionThenElse_0"__id*
-
-%array_0ArraySymbol*
-s3_4*„
-s3_4
-<synthetic> (O
-M
-O O(#
-
-%scope-FD_1_dataLabel"
-values"__id*
-
-%unionThenElse_0å
-â
-
-__unknown_file (	
-%func_0"__declareFunction*OMK
-IC__laragon_reactAppBack_src_helpers_accordionFormatter_js_80_15_A_123_iteb
-`
-
-__unknown_file (!
-
-%env"
-%scope-FD_1_dataLabel"__id*
-
-%scope-FD_1_dataLabelfd
-
-__unknown_file (/
-%functionPrototype_0%SonarFunctionPrototype"%SonarFunctionPrototypew
-u
-
-__unknown_file (	
-%void_1"
-__setProto*
-	
-%func_0*31
-/
-%functionPrototype_0%SonarFunctionPrototypeL
-J
-
-__unknown_file ("
-
-%env"
-_this_1_FD_1_dataLabel"__id* F
-D
-
-__unknown_file (	
-%expr_0"__id**
-
-data"	
-forEachV"T
-P P(
-
-%methRes_0*
-
-data"	
-forEach2
-
-
-data2
-
-
-%env2
-	
-%func_0"1
-j j(%*#
-
-%scope-FD_1_dataLabel"
-values:"
-
-__unknown_file (
-%env:
-N N(
-data:
-N N(
-labelB ∂
-JC__laragon_reactAppBack_src_helpers_accordionFormatter_js_110_15_A_125_iteC
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.jsn n("s7_1*‚
-s7_1
-<synthetic> (I
-G
-
-__unknown_file (
-%globalBuiltins"__initializeGlobal* 0
-.
-o o(
-name"__id**
-
-item"
-namea
-_
-
-__unknown_file (
-%sc-FD_2_dataValue_0"__id*%#*!
-
-%env"
-%scope-FD_2_dataValueU
-S
-
-__unknown_file (	
-%expr_0"__id*&$*"
-
-%sc-FD_2_dataValue_0"
-values*
-s7_2
-s7_3*‡
-s7_2
-<synthetic> (20
-p  p(,
-%array_0ArraySymbol"ArraySymbol;
-9
-p! p(+
-%fieldAccess_0"__id**
-
-item"
-value\
-Z
-p! p(+	
-%void_0"
-__arrayAdd*
-
-%array_0ArraySymbol*: *
-
-%fieldAccess_0T
-R
-
-__unknown_file (
-%arrayCons_0"__id* *
-
-%globalBuiltins"
-ArrayW
-U
-
-__unknown_file (
-%fieldAccess_1"__id*!*
-
-%arrayCons_0"
-	prototypef
-d
-
-__unknown_file (	
-%void_1"
-__setProto*
-
-%array_0ArraySymbol*
-
-%fieldAccess_1S
-Q
-
-__unknown_file (
-%unionThenElse_0"__id*
-
-%array_0ArraySymbol*
-s7_4*Ç
-s7_3
-<synthetic> (20
-p/ p(N
-%array_1ArraySymbol"ArraySymbol>
-<
-p0 p(=
-%fieldAccess_2"__id**
-
-item"
-
-replaced\
-Z
-p0 p(=	
-%void_2"
-__arrayAdd*
-
-%array_1ArraySymbol*: *
-
-%fieldAccess_2?
-=
-p? p(M
-%fieldAccess_3"__id**
-
-item"
-	affection\
-Z
-p? p(M	
-%void_3"
-__arrayAdd*
-
-%array_1ArraySymbol*: *
-
-%fieldAccess_3T
-R
-
-__unknown_file (
-%arrayCons_1"__id* *
-
-%globalBuiltins"
-ArrayW
-U
-
-__unknown_file (
-%fieldAccess_4"__id*!*
-
-%arrayCons_1"
-	prototypef
-d
-
-__unknown_file (	
-%void_4"
-__setProto*
-
-%array_1ArraySymbol*
-
-%fieldAccess_4S
-Q
-
-__unknown_file (
-%unionThenElse_0"__id*
-
-%array_1ArraySymbol*
-s7_4*ì
-s7_4
-<synthetic> (T
-R
-p p(	
-%void_5"__mapSet*
-	
-%expr_0*
-
-
-name*
-
-%unionThenElse_0"
-
-__unknown_file ( :"
-
-__unknown_file (
-%env:
-n n(
-itemB –
-NC__laragon_reactAppBack_src_helpers_accordionFormatter_js_108_1_FD_2_dataValueC
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.jsl	 l("s6_1*£
-s6_1
-<synthetic> (I
-G
-
-__unknown_file (
-%globalBuiltins"__initializeGlobal* =;
-
-__unknown_file (
-%scope-FD_2_dataValue"Objectb
-`
-
-__unknown_file (!
-
-%env"
-%scope-FD_2_dataValue"__id*
-
-%scope-FD_2_dataValue<
-:
-m m( 
-%fieldAccess_0"__id**
-
-data"
-lengthJ
-H
-m m( 
-%binOpRes_0"__js_greater_than*
-
-%fieldAccess_0*2 *
-s6_2
-s6_3*°
-s6_2
-<synthetic> ()'
-m$ m(&
-	%object_0Object"ObjectO
-M
-
-__unknown_file (
-%unionThenElse_0"__id*
-
-	%object_0Object*
-s6_4*≈
-s6_3
-<synthetic> (20
-m) m(+
-%array_0ArraySymbol"ArraySymbolT
-R
-
-__unknown_file (
-%arrayCons_0"__id* *
-
-%globalBuiltins"
-ArrayW
-U
-
-__unknown_file (
-%fieldAccess_1"__id*!*
-
-%arrayCons_0"
-	prototypef
-d
-
-__unknown_file (	
-%void_0"
-__setProto*
-
-%array_0ArraySymbol*
-
-%fieldAccess_1S
-Q
-
-__unknown_file (
-%unionThenElse_0"__id*
-
-%array_0ArraySymbol*
-s6_4*‰
-s6_4
-<synthetic> (O
-M
-m m(#
-
-%scope-FD_2_dataValue"
-values"__id*
-
-%unionThenElse_0ç
-ä
-
-__unknown_file (	
-%func_0"__declareFunction*PNL
-JC__laragon_reactAppBack_src_helpers_accordionFormatter_js_110_15_A_125_iteb
-`
-
-__unknown_file (!
-
-%env"
-%scope-FD_2_dataValue"__id*
-
-%scope-FD_2_dataValuefd
-
-__unknown_file (/
-%functionPrototype_0%SonarFunctionPrototype"%SonarFunctionPrototypew
-u
-
-__unknown_file (	
-%void_1"
-__setProto*
-	
-%func_0*31
-/
-%functionPrototype_0%SonarFunctionPrototypeL
-J
-
-__unknown_file ("
-
-%env"
-_this_1_FD_2_dataValue"__id* F
-D
-
-__unknown_file (	
-%expr_0"__id**
-
-data"	
-forEachV"T
-n n(
-
-%methRes_0*
-
-data"	
-forEach2
-
-
-data2
-
-
-%env2
-	
-%func_0"1
-r r(%*#
-
-%scope-FD_2_dataValue"
-values:"
-
-__unknown_file (
-%env:
-l l(
-dataB ˛
-FC__laragon_reactAppBack_src_helpers_accordionFormatter_js_1_1_P1-ENTRYA
-9C:/laragon/reactAppBack/src/helpers/accordionFormatter.js t(%"s1_1*Ê
-s1_1
-<synthetic> (,*
-
-__unknown_file (
-%env"Object86
-
-__unknown_file (
-
-%env"
-global"Object.,
-
-__unknown_file (
-module"Object?
-=
-
-__unknown_file (
-
-module"	
-exports"__id* 3
-1
-
-__unknown_file (	
-exports"__id* I
-G
-
-__unknown_file (
-%globalBuiltins"__initializeGlobal* 20
-
-__unknown_file (
-
-%scope-P_7"ObjectL
-J
-
-__unknown_file (
-
-%env"
-
-%scope-P_7"__id*
-
-
-%scope-P_7ê
-ç
-
-__unknown_file (	
-%func_1"__declareFunction*SQO
-MC__laragon_reactAppBack_src_helpers_accordionFormatter_js_78_1_FD_1_dataLabelfd
-
-__unknown_file (/
-%functionPrototype_1%SonarFunctionPrototype"%SonarFunctionPrototypew
-u
-
-__unknown_file (	
-%void_1"
-__setProto*
-	
-%func_1*31
-/
-%functionPrototype_1%SonarFunctionPrototype<:
-
-__unknown_file (
-%prototype_0Object"ObjectV
-T
-
-__unknown_file (
-%objectCons_0"__id*!*
-
-%globalBuiltins"
-ObjectW
-U
-
-__unknown_file (
-%objectProt_0"__id*" *
-
-%objectCons_0"
-	prototyped
-b
-
-__unknown_file (	
-%void_2"
-__setProto*
-
-%prototype_0Object*
-
-%objectProt_0X
-V
-
-__unknown_file (
-	
-%func_1"
-	prototype"__id*
-
-%prototype_0Object>
-<
-N	 N(
-
-
-%scope-P_7"
-	dataLabel"__id*
-	
-%func_1ë
-é
-
-__unknown_file (	
-%func_2"__declareFunction*TRP
-NC__laragon_reactAppBack_src_helpers_accordionFormatter_js_108_1_FD_2_dataValuefd
-
-__unknown_file (/
-%functionPrototype_2%SonarFunctionPrototype"%SonarFunctionPrototypew
-u
-
-__unknown_file (	
-%void_3"
-__setProto*
-	
-%func_2*31
-/
-%functionPrototype_2%SonarFunctionPrototype<:
-
-__unknown_file (
-%prototype_1Object"ObjectV
-T
-
-__unknown_file (
-%objectCons_1"__id*!*
-
-%globalBuiltins"
-ObjectW
-U
-
-__unknown_file (
-%objectProt_1"__id*" *
-
-%objectCons_1"
-	prototyped
-b
-
-__unknown_file (	
-%void_4"
-__setProto*
-
-%prototype_1Object*
-
-%objectProt_1X
-V
-
-__unknown_file (
-	
-%func_2"
-	prototype"__id*
-
-%prototype_1Object>
-<
-l	 l(
-
-
-%scope-P_7"
-	dataValue"__id*
-	
-%func_2ã
-à
-
-__unknown_file (	
-%func_0"__declareFunction*NLJ
-HC__laragon_reactAppBack_src_helpers_accordionFormatter_js_1_29_A_122_datL
-J
-
-__unknown_file (
-
-%env"
-
-%scope-P_7"__id*
-
-
-%scope-P_7fd
-
-__unknown_file (/
-%functionPrototype_0%SonarFunctionPrototype"%SonarFunctionPrototypew
-u
-
-__unknown_file (	
-%void_0"
-__setProto*
-	
-%func_0*31
-/
-%functionPrototype_0%SonarFunctionPrototypeA
-?
-
-__unknown_file (
-
-%env"
-_this_0_P_7"__id* 8
-6
- (
-formatAccordionData"__id*
-	
-%func_0B
-@
-t t(
-
-module"	
-exports"__id*
-
-formatAccordionDataQ
-O
-
-__unknown_file (
-%moduleExports_0"__id**
-
-module"	
-exportsD
-B
-
-__unknown_file (
-%envValue_0"__moduleEnv*
-
-
-%envY
-W
-
-__unknown_file ("
-
-%moduleExports_0"
-
-%moduleEnv"__id*
-
-%envValue_0"3
-
-__unknown_file (*
-
-module"	
-exportsB 
