@@ -10,7 +10,9 @@
     "build:dev": " cp src/environment/.dev.env .env  && cross-env NODE_ENV=development  node ./bin/www ",
     "build:prod": " cp src/environment/.prod.env .env  && cross-env NODE_ENV=production  node ./bin/www ",
     "deploy:dev": "pm2 start ecosystem.config.json --only PDSS_API_DEVELOP",
-    "deploy:prod": "pm2 start ecosystem.config.json --only PDSS_API_PRODUCTION"
+    "deploy:prod": "pm2 start ecosystem.config.json --only PDSS_API_PRODUCTION",
+    "test": "jest -i --colors --verbose --detectOpenHandles",
+    "test:watch": "jest -i --watchAll"
   },
   "keywords": [],
   "author": "",
@@ -32,10 +34,15 @@
     "multer": "^1.4.5-lts.1",
     "mysql": "^2.18.1",
     "mysql2": "^2.3.3",
+    "node-cron": "^3.0.2",
     "nodemon": "^2.0.19",
     "passport": "^0.6.0",
     "socket.io": "^4.5.1",
     "swagger-ui-express": "^4.6.0",
     "validator": "^13.7.0"
+  },
+  "devDependencies": {
+    "jest": "^26.0.1",
+    "supertest": "^6.0.1"
   }
 }
