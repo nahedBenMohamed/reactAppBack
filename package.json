@@ -37,7 +37,7 @@
     "node-cron": "^3.0.2",
     "nodemon": "^2.0.19",
     "passport": "^0.6.0",
-    "socket.io": "^4.5.1",
+    "socket.io": "^4.6.2",
     "swagger-ui-express": "^4.6.0",
     "validator": "^13.7.0"
   },
